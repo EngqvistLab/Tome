@@ -2,16 +2,18 @@
 A machine learning model for the prediction of optimal growth temperature of microorganisms<br/>
 This method has two submodules: (1) model for the prediction of optimal growth temperature; (2) find the homologues for a given seqeuence with the same EC nubmer. 
 
+## Installation
+
 ## Depedences
 
 
-## 1. Prediction of optimal growth temperature
+## Prediction of optimal growth temperature
 ```python
 light predOGT -infile [infile]
 light predOGT -indir [directory with a list of fasta files]
 ```
 
-## 2. Get homologues for a given enzyme sequence.
+## Get homologues for a given enzyme sequence.
 ```python
 light getHomo -infile [infile which is a fasta file containing the query sequence] -ec [EC number]
 ```
