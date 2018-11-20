@@ -2,6 +2,9 @@
 A machine learning model for the prediction of optimal growth temperature of microorganisms<br/>
 This method has two submodules: (1) model for the prediction of optimal growth temperature; (2) find the homologues for a given seqeuence with the same EC nubmer. 
 
+## Depedences
+
+
 ## 1. Prediction of optimal growth temperature
 ```python
 light predOGT -infile [infile]
