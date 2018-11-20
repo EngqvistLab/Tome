@@ -15,7 +15,7 @@ light predOGT -indir [dir_to_proteomes] -out outfile
 
 ## Get homologues for a given enzyme sequence.
 ```python
-light getHomo -infile [infile which is a fasta file containing the query sequence] -ec [EC number] -out oufile
+light getHomo -infile seq.fasta -ec [EC number] -out oufile
 ```
 
 Gang Li<br/>
