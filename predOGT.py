@@ -126,6 +126,7 @@ def predict(fasta_file,model,means,stds,features):
     pred_ogt = model.predict(Xs)[0]
     return np.around(pred_ogt,decimals=2)
 
+
 def main():
     args = dict()
     for i in range(len(sys.argv)):
@@ -164,6 +165,7 @@ def main():
             if name.startswith('.'): continue
             pred_ogt = predict(os.path.join(indir,name),model,means,stds,features)
             outf.write('{0}\t{1}\n'.format(name, pred_ogt))
+
 
 if __name__ == '__main__':
     main()
