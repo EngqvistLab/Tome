@@ -64,18 +64,18 @@ def main():
     print_out('Number of total sequences to be downloaded:{0}'.format(numids))
 
     num_cpus = cpu_count()
+    p = Pool(num_cpus)
     print_out('Number of cpus: {0}'.format(num_cpus))
     for i in range(numids/100+1):
         if i < numids/100:
-            results = Pool(num_cpus).map(retrive_from_uniprot, uniprot_ids[100*i:100*(i+1)])
+            results = p.map(retrive_from_uniprot, uniprot_ids[100*i:100*(i+1)])
         else:
-            results = Pool(num_cpus).map(retrive_from_uniprot, uniprot_ids[100*i:])
+            results = p.map(retrive_from_uniprot, uniprot_ids[100*i:])
 
         for res in results: fhand.write(res+'\n')
-        results = []
 
         k = i*100
-        if k>1500:
+        if k%1500 == 0:
             fhand.close()
             file_index += 1
             outfile = os.path.join(outdir,'all_enzymes_{0}.fasta'.format(file_index))
@@ -83,5 +83,7 @@ def main():
         print_out('{0} seqeunces have been downloaded'.format(k))
     print_out('complete!')
     fhand.close()
+    p.close()
+    p.join()
 
 if __name__ == '__main__': main()
