@@ -39,13 +39,13 @@ def get_existed_sequence_ids(outdir):
             existed_ids[uniprot_id] = True
     return existed_ids
 
-def get_out_file(outdir):
+def get_out_file_index(outdir):
     k = 0
     for name in os.listdir(outdir):
         if not name.endswith('fasta'): continue
         k += 1
-    outfile = os.path.join(outdir,'all_enzymes_{0}.fasta'.format(k))
-    return outfile
+
+    return k
 
 
 def main():
@@ -55,14 +55,15 @@ def main():
     existed_ids = get_existed_sequence_ids(outdir)
     uniprot_ids = load_uniprot_ids(uniprot_id_file,existed_ids)
 
-    outfile = get_out_file(outdir)
+    file_index = get_out_file_index(outdir)
+    outfile = os.path.join(outdir,'all_enzymes_{0}.fasta'.format(file_index))
     fhand = open(outfile,'w')
 
 
     numids = len(uniprot_ids)
     print_out('Number of total sequences to be downloaded:{0}'.format(numids))
 
-    num_cpus = cpu_count()-1
+    num_cpus = cpu_count()
     print_out('Number of cpus: {0}'.format(num_cpus))
     for i in range(numids/100+1):
         if i < numids/100:
@@ -73,6 +74,11 @@ def main():
         for res in results: fhand.write(res+'\n')
 
         k = i*100
+        if k>3000:
+            fhand.close()
+            file_index += 1
+            outfile = os.path.join(outdir,'all_enzymes_{0}.fasta'.format(file_index))
+            fhand = open(outfile,'w')
         print_out('{0} seqeunces have been downloaded'.format(k))
     print_out('complete!')
     fhand.close()
