@@ -9,8 +9,8 @@ This method has two submodules: (1) model for the prediction of optimal growth t
 
 ## Prediction of optimal growth temperature
 ```python
-light predOGT -infile proteome.fasta -out outfile
-light predOGT -indir [dir_to_proteomes] -out outfile
+light predOGT -fasta proteome.fasta -o outfile
+light predOGT -indir [dir_to_proteomes] -o outfile
 ```
 
 ## Get homologues for a given enzyme sequence.
