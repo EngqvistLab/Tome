@@ -75,7 +75,7 @@ def main():
         for res in results: fhand.write(res+'\n')
 
         k = i*100
-        if k%1500 == 0:
+        if k%10000 == 0:
             fhand.close()
             file_index += 1
             outfile = os.path.join(outdir,'all_enzymes_{0}.fasta'.format(file_index))
