@@ -72,6 +72,7 @@ def main():
             results = Pool(num_cpus).map(retrive_from_uniprot, uniprot_ids[100*i:])
 
         for res in results: fhand.write(res+'\n')
+        results = []
 
         k = i*100
         if k>1500:
