@@ -15,7 +15,7 @@ Pyhton 2.7 or Python 3 should both work.
 
 ## Usage:
 ### 1. Prediction of optimal growth temperature for one microorganism
-```python
+```linux
 tome predOGT -fasta proteome.fasta -o outfile
 ```
 ### 2. Predict optimal growth temperatures for a list of microorganisms
