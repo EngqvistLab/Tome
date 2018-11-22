@@ -7,7 +7,7 @@ This method has two submodules: (1) model for the prediction of optimal growth t
 ## Depedences
 * ncbi-blast-2.7.1+ (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
 
-
+## Usage:
 ### 1. Prediction of optimal growth temperature of a proteome
 ```python
 tome predOGT -fasta proteome.fasta -o outfile
