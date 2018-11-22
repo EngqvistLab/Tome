@@ -5,7 +5,7 @@ This method has two submodules: (1) model for the prediction of optimal growth t
 ## Installation
 
 ## Depedences
-* [ncbi-blast-2.7.1+](ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
+* ncbi-blast-2.7.1+ (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
 
 
 ## Prediction of optimal growth temperature
