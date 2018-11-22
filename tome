@@ -8,9 +8,6 @@ from collections import Counter
 from multiprocessing import Pool, cpu_count
 import numpy as np
 
-################################################################################
-
-
 
 # Esimtation of OGT for organism(s)
 ################################################################################
@@ -341,6 +338,9 @@ def getHomo():
     print_out('step 5: save results')
     build_output(blastRes,seqInfo,outdir,seqfile)
     print_out('Done!')
+
+    dbfile = os.path.join(outdir,'db')
+    os.system('rm {0}*'.format(dbfile))
 
 if __name__ == '__main__':
 
