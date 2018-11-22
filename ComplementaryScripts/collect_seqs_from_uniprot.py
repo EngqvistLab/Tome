@@ -86,4 +86,7 @@ def main():
     p.close()
     p.join()
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    for i in range(10000):
+        try: main()
+    except: None
