@@ -3,9 +3,15 @@ A machine learning model for the prediction of optimal growth temperature of mic
 This method has two submodules: (1) model for the prediction of optimal growth temperature; (2) find the homologues for a given seqeuence with the same EC nubmer. 
 
 ## Installation
-
+Pyhton 2.7 or Python 3 should both work.
 ## Depedences
 * ncbi-blast-2.7.1+ (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
+* pandas
+* Biopython
+* numpy
+* collections
+* sklearn
+
 
 ## Usage:
 ### 1. Prediction of optimal growth temperature for one microorganism
