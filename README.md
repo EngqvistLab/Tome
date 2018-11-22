@@ -15,7 +15,7 @@ tome predOGT -indir [dir_to_proteomes] -o outfile
 
 ## Get homologues for a given enzyme sequence.
 ```python
-tome getHomo -seq seq.fasta -ec [ec number] -out oufile
+tome getHomo -seq seq.fasta -ec [ec number] -o oufile
 ```
 
 Gang Li<br/>
