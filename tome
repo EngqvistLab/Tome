@@ -1,0 +1,357 @@
+#!/usr/bin/env python
+import sys
+import os
+import pandas as pd
+from Bio import SeqIO
+from sklearn.externals import joblib
+from collections import Counter
+from multiprocessing import Pool, cpu_count
+import numpy as np
+
+################################################################################
+
+
+
+# Esimtation of OGT for organism(s)
+################################################################################
+def print_out(line):
+    sys.stdout.write(str(line)+'\n')
+
+def load_means_stds(predictor):
+    means=dict()
+    stds=dict()
+    features=list()
+    for line in open(predictor.replace('pkl','f'),'r'):
+        if line.startswith('#'):continue
+        cont=line.split()
+        means[cont[0]]=float(cont[1])
+        stds[cont[0]]=float(cont[2])
+        features.append(cont[0])
+    return means,stds,features
+
+def load_model():
+    path = os.path.dirname(os.path.realpath(__file__))
+    predictor = os.path.join(path,'model/OGT_svr.pkl')
+    try:
+        model=joblib.load(predictor)
+        means,stds,features = load_means_stds(predictor)
+    except:
+        sys.stdout.write('Failed loading the model. Trying to train the model...')
+        from sklearn import svm
+        from sklearn.metrics import r2_score
+        from scipy.stats import spearmanr,pearsonr
+
+        def get_standardizer(X):
+            mean,std=list(),list()
+            for i in range(X.shape[1]):
+                mean.append(np.mean(X[:,i]))
+                std.append(float(np.var(X[:,i]))**0.5)
+            return mean,std
+
+        def standardize(X):
+            Xs=np.zeros_like(X)
+            n_sample,n_features=X.shape[0],X.shape[1]
+            for i in range(n_features):
+                Xs[:,i]=(X[:,i]-np.mean(X[:,i]))/float(np.var(X[:,i]))**0.5
+            return Xs
+
+        # load training dataset
+        trainfile = os.path.join(path,'data/train.csv')
+        df = pd.read_csv(trainfile,index_col=0)
+        X = df.values[:,:-1]
+        Y = df.values[:,-1].ravel()
+        features = df.columns[:-1]
+
+        Xs = standardize(X)
+        model = svm.SVR(kernel='rbf',C = 64.0, epsilon = 1.0)
+        model.fit(Xs,Y)
+
+        # get model performance:
+        p = model.predict(Xs)
+        rmse = np.sqrt(MSE(p,Y))
+        r2 = r2_score(Y,p)
+        r_spearman = spearmanr(p,Y)
+        r_pearson = pearsonr(p,Y)
+
+        sys.stdout.write('A new model has beed successfully trained.')
+        sys.stdout.write('Model performance:')
+        sys.stdout.write('        RMSE: '+ str(rmse))
+        sys.stdout.write('          r2: ' + str(r2))
+        sys.stdout.write('  Pearsnon r:' + str(r_pearson))
+        sys.stdout.write('  Spearman r:' + str(r_spearman))
+        sys.stdout.write('')
+
+        # save model
+        sys.stdout.write('Saving new model to replace the original one...')
+        joblib.dump(model, predictor)
+
+        fea = open(predictor.replace('pkl','f'),'w')
+        means, stds = get_standardizer(X)
+        fea.write('#Feature_name\tmean\tstd\n')
+        for i in range(len(mean)):
+            fea.write('{0}\t{1}\t{2}\n'.format(features[i], mean[i], stds[i]))
+        fea.close()
+        sys.stdout.write('Done!')
+        sys.stdout.write('')
+
+    return model,means,stds,features
+
+def do_count(seq):
+    dimers = Counter()
+    for i in range(len(seq)-1): dimers[seq[i:i+2]] += 1.0
+    return dimers
+
+
+def count_dimer(fasta_file):
+    seqs = [str(rec.seq).upper() for rec in SeqIO.parse(fasta_file,'fasta')]
+
+    num_cpus = cpu_count()
+    results = Pool(num_cpus).map(do_count, seqs)
+    dimers = sum(results, Counter())
+    return dict(dimers)
+
+def get_dimer_frequency(fasta_file):
+    dimers = count_dimer(fasta_file)
+    amino_acids = 'ACDEFGHIKLMNPQRSTVWXY'
+    dimers_fq = dict()
+
+    # this is to remove dimers which contains letters other than these 20 amino_acids,
+    # like *
+    for a1 in amino_acids:
+        for a2 in amino_acids:
+            dimers_fq[a1+a2] = dimers.get(a1+a2,0.0)
+    number_of_aa_in_fasta = sum(dimers_fq.values())
+    for key,value in dimers_fq.items(): dimers_fq[key] = value/number_of_aa_in_fasta
+    return dimers_fq
+
+def predict(fasta_file,model,means,stds,features):
+    dimers_fq = get_dimer_frequency(fasta_file)
+
+    Xs = list()
+    for fea in features:
+        Xs.append((dimers_fq[fea]-means[fea])/stds[fea])
+
+    Xs = np.array(Xs).reshape([1,len(Xs)])
+
+    pred_ogt = model.predict(Xs)[0]
+    return np.around(pred_ogt,decimals=2)
+
+def parse_args():
+    args = dict()
+    for i in range(len(sys.argv)):
+        item = sys.argv[i]
+        if item.startswith('-'): args[item] = sys.argv[i+1]
+    return args
+
+def predOGT():
+    args = parse_args()
+
+    infile = args.get('-fasta', None)
+    indir = args.get('-indir', None)
+
+    if infile is None and indir is None:
+        sys.exit('''
+        Please check your inputs a gain.
+        Usage:
+            tome predOGT -fasta infile -o outfile -num_threads xx
+                                or
+            tome predOGT.py -indir indir -o outfile -num_threads xx
+
+        -fasta: a fasta file that contains all proteins in the proteome
+        -indir: a directory that contains all the fasta files
+        -o: outfile
+        -num_threads: int
+        \n''')
+
+    if args.get('-o', None) is None: outf = sys.stdout
+    else: outf = open(args['-o'], 'w')
+
+    model, means, stds, features = load_model()
+    outf.write('FileName\tpredOGT (C)\n')
+
+    if infile is not None:
+        pred_ogt = predict(infile,model,means,stds,features)
+        outf.write('{0}\t{1}\n'.format(infile.split('/')[-1], pred_ogt))
+
+    else:
+        for name in os.listdir(indir):
+            if name.startswith('.'): continue
+            pred_ogt = predict(os.path.join(indir,name),model,means,stds,features)
+            outf.write('{0}\t{1}\n'.format(name, pred_ogt))
+
+################################################################################
+
+
+
+
+# Find homologues for a given enzyme with the same ec number
+################################################################################
+
+def get_uniprot_ids_of_ec(ec,annofile,temps,outdir):
+    df = pd.read_csv(annofile,index_col=0,sep='\t')
+    subdf = df.loc[ec,:]
+    data = subdf.values
+    data = data[data[:,-1]>temps[0],:]
+    data = data[data[:,-1]<temps[1],:]
+
+    subdf = pd.DataFrame(data=data,columns=df.columns)
+    subout = os.path.join(outdir,'{}_all.tsv'.format(ec))
+    subdf.to_csv(subout,sep='\t')
+    return list(subdf['uniprot_id'])
+
+def build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir):
+    is_target = dict()
+    for id in uniprot_ids: is_target[id] = True
+
+    outfafile = os.path.join(outdir,'{0}_all.fasta'.format(ec))
+    fhand = open(outfafile,'w')
+
+    for rec in SeqIO.parse(brenda_seq_file,'fasta'):
+        if not is_target.get(rec.id,False): continue
+        fhand.write('>{0}\n{1}\n'.format(rec.id,rec.seq))
+    fhand.close()
+
+def run_blastp(ec,seqfile,cpu_num,outdir):
+    dbseq = os.path.join(outdir,'{0}_all.fasta'.format(ec))
+    db = os.path.join(outdir,'db')
+    out = os.path.join(outdir,'blast_{}.tsv'.format(ec))
+
+    cmd = '''makeblastdb -dbtype prot -in {0} -out {1}
+    blastp -query {2} -db {1} -outfmt 6 -num_threads {3} -out {4} -evalue 1e-10 -max_hsps 1
+
+    '''.format(dbseq,db,seqfile,cpu_num,out)
+
+    os.system(cmd)
+
+def parse_blastp_results(outdir,ec):
+    blastRes = dict()
+    # blastRes = {uniprot_id:(ident,coverage,seq)}
+    blastfile = os.path.join(outdir,'blast_{}.tsv'.format(ec))
+    fastafile = os.path.join(outdir,'{}_all.fasta'.format(ec))
+    seqs = SeqIO.to_dict(SeqIO.parse(fastafile,'fasta'))
+
+    for line in open(blastfile):
+        cont = line.split()
+        target = cont[1]
+        ident = float(cont[2])
+        seq = seqs[target].seq
+        cov = float(cont[3])/len(seq)*100
+
+        blastRes[target] = (ident,cov,seq)
+    return blastRes
+
+def get_info_for_selected_seqs(annofile,uniprot_ids,ec):
+    df = pd.read_csv(annofile,index_col=0,sep='\t')
+    subdf = df.loc[ec,:]
+    seqInfo = dict()
+    data = subdf.values
+    for i in range(data.shape[0]):
+        id = data[i,0]
+        seqInfo[id] = [data[i,j+1] for j in range(4)]
+    return seqInfo
+
+
+def build_output(blastRes,seqInfo,outdir,seqfile):
+    # two ouput files
+    # 1. a fasta file containing all target seqeunces plus query
+    # 2. a excel file containts the information of the target
+
+    query = SeqIO.to_dict(SeqIO.parse(seqfile,'fasta'))
+    query_id = query.keys()[0]
+    query_seq = query[query_id].seq
+
+    # write the fasta file
+    outfasta = os.path.join(outdir,query_id+'_out.fasta')
+    fhand = open(outfasta,'w')
+    fhand.write('>{0}\n{1}\n'.format(query_id,query_seq))
+    for id, rec in blastRes.items(): fhand.write('>{0}\n{1}\n'.format(id,rec[-1]))
+
+    # build a dataframe and export it to excel and tsv file
+    outcsv = os.path.join(outdir,query_id+'_out.tsv')
+    outexcel = os.path.join(outdir,query_id+'_out.xlsx')
+
+    data = dict()
+    cols = ['id','identity(%)','coverage(%)','domain','organism','source','growth_temp','sequence']
+    # first line is for query
+    data['id'] = [query_id]
+    for col in cols[1:-1]: data[col] = [None]
+    data['sequence'] = [query_seq]
+
+    for id,rec in blastRes.items():
+        data['id'] += [id]
+        data['identity(%)'] += [rec[0]]
+        data['coverage(%)'] += [rec[1]]
+        data['domain'] += [seqInfo[id][0]]
+        data['organism'] += [seqInfo[id][1]]
+        data['source'] += [seqInfo[id][2]]
+        data['growth_temp'] += [seqInfo[id][3]]
+        data['sequence'] += [rec[2]]
+
+    df = pd.DataFrame(data=data,columns=cols)
+    df.to_csv(outcsv,sep='\t')
+
+    writer = pd.ExcelWriter(outexcel)
+    df.to_excel(writer,'Sheet1')
+    writer.save()
+
+
+def getHomo():
+    args = parse_args()
+    seqfile = args.get('-seq',None)
+    ec = args.get('-ec',None)
+    outdir = args.get('-outdir',None)
+    cpu_num = args.get('-num_threads',1)
+    temps = args.get('-trg','-50,200')
+    temps = [float(item) for item in temps.split(',')]
+
+    if seqfile is None or ec is None:
+        sys.exit('''
+        Please check your inputs a gain.
+        Usage:
+            tome getHomo -seq seq.fasta -trg 50,200 -outdir -p number
+
+        -seq: a fasta file that contains protein sequence of the query enzyme
+        -outdir: outdir
+        -p: num_threads,int
+
+        \n''')
+    if outdir is None: outdir = './'
+    if not os.path.exists(outdir): os.mkdir(outdir)
+
+    path = os.path.dirname(os.path.realpath(__file__))
+    annofile = os.path.join(path,'external_data/2_unid_growth_temp_mapping.tsv')
+    brenda_seq_file = os.path.join(path,'external_data/all_enzyme_sequences.fasta')
+
+    print_out('step 1: get all uniprot ids with the given ec number')
+    uniprot_ids = get_uniprot_ids_of_ec(ec,annofile,temps,outdir)
+    print_out('{0} sequences were found'.format(len(uniprot_ids)))
+    print_out('')
+
+    print_out('step 2: build fasta file for blast')
+    build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir)
+
+    print_out('step 3: run blastp')
+    run_blastp(ec,seqfile,cpu_num,outdir)
+
+    print_out('step 4: get info of hits')
+    seqInfo = get_info_for_selected_seqs(annofile,uniprot_ids,ec)
+    blastRes = parse_blastp_results(outdir,ec)
+    print_out('{0} homologues were found by blast'.format(len(blastRes)))
+
+    print_out('step 5: save results')
+    build_output(blastRes,seqInfo,outdir,seqfile)
+    print_out('Done!')
+
+if __name__ == '__main__':
+
+    for i in range(len(sys.argv)):
+        if 'tome' in sys.argv[i]:
+            met = sys.argv[i+1]
+            break
+    if met == 'predOGT': predOGT()
+    elif met == 'getHomo': getHomo()
+    else:
+        sys.exit('''
+        Please check your inputs a gain. Tome currently only provides preOGT and
+        getHomo.
+        \n''')
