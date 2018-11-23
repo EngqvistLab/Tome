@@ -16,13 +16,26 @@ Pyhton 2.7 or Python 3 should both work.
 ## Usage:
 ### 1. Prediction of optimal growth temperature for one microorganism
 ```linux
-tome predOGT -fasta proteome.fasta -o outfile
+./tome predOGT -fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
 ```
+Then you will get following results:<br/>
+```linux
+FileName	predOGT (C)
+95_pyrococcus_horikoshii_archaea.fasta	94.0
+```
+
 ### 2. Predict optimal growth temperatures for a list of microorganisms
 ```linux
-tome predOGT -indir [dir_to_proteomes] -o outfile
+./tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
 ```
-### 3. Get enzymes for an given ec number. One can specify the temperature range for enzyme temperature optima.
+Then you will get an tab-sperated output file predicted_ogt.tsv with following contents:<br/>
+```linux
+FileName	predOGT (C)
+38_succinivibrio_dextrinosolvens_bacteria.fasta	38.27
+95_pyrococcus_horikoshii_archaea.fasta	94.0
+69_caldanaerobacter_subterraneus_bacteria.fasta	70.0
+```
+### 3. Get enzymes for a given ec number. One can specify the temperature range for enzyme temperature optima.
 ```linux
 tome getEnzymes -ec [ec number] -temp_range 0,100 -outdir outdir
 ```
