@@ -14,6 +14,23 @@ import numpy as np
 def print_out(line):
     sys.stdout.write(str(line)+'\n')
 
+def parse_args():
+    args = dict()
+    for i in range(len(sys.argv)):
+        item = sys.argv[i]
+        if item.startswith('-'):
+            try:args[item] = sys.argv[i+1]
+            except:args[item] = ''
+
+    for i in range(len(sys.argv)):
+        if 'tome' in sys.argv[i]:
+            try:
+                if sys.argv[i+1] in ['predOGT','getEnzymes']:
+                    args['method'] = sys.argv[i+1]
+            except: None
+            break
+    return args
+
 def load_means_stds(predictor):
     means=dict()
     stds=dict()
@@ -99,16 +116,17 @@ def do_count(seq):
     return dimers
 
 
-def count_dimer(fasta_file):
+def count_dimer(fasta_file,p):
     seqs = [str(rec.seq).upper() for rec in SeqIO.parse(fasta_file,'fasta')]
 
-    num_cpus = cpu_count()
+    if p == 0:num_cpus = cpu_count()
+    else: num_cpus = p
     results = Pool(num_cpus).map(do_count, seqs)
     dimers = sum(results, Counter())
     return dict(dimers)
 
-def get_dimer_frequency(fasta_file):
-    dimers = count_dimer(fasta_file)
+def get_dimer_frequency(fasta_file,p):
+    dimers = count_dimer(fasta_file,p)
     amino_acids = 'ACDEFGHIKLMNPQRSTVWXY'
     dimers_fq = dict()
 
@@ -121,8 +139,8 @@ def get_dimer_frequency(fasta_file):
     for key,value in dimers_fq.items(): dimers_fq[key] = value/number_of_aa_in_fasta
     return dimers_fq
 
-def predict(fasta_file,model,means,stds,features):
-    dimers_fq = get_dimer_frequency(fasta_file)
+def predict(fasta_file,model,means,stds,features,p):
+    dimers_fq = get_dimer_frequency(fasta_file,p)
 
     Xs = list()
     for fea in features:
@@ -133,47 +151,28 @@ def predict(fasta_file,model,means,stds,features):
     pred_ogt = model.predict(Xs)[0]
     return np.around(pred_ogt,decimals=2)
 
-def parse_args():
-    args = dict()
-    for i in range(len(sys.argv)):
-        item = sys.argv[i]
-        if item.startswith('-'): args[item] = sys.argv[i+1]
-    return args
 
-def predOGT():
-    args = parse_args()
-
+def predOGT(args):
     infile = args.get('-fasta', None)
     indir = args.get('-indir', None)
 
-    if infile is None and indir is None:
-        sys.exit('''
-        Please check your inputs a gain.
-        Usage:
-            tome predOGT -fasta infile -o outfile -num_threads xx
-                                or
-            tome predOGT.py -indir indir -o outfile -num_threads xx
-
-        -fasta: a fasta file that contains all proteins in the proteome
-        -indir: a directory that contains all the fasta files
-        -o: outfile
-        -num_threads: int
-        \n''')
-
     if args.get('-o', None) is None: outf = sys.stdout
     else: outf = open(args['-o'], 'w')
+
+    p = int(args.get('-p',1))
 
     model, means, stds, features = load_model()
     outf.write('FileName\tpredOGT (C)\n')
 
     if infile is not None:
-        pred_ogt = predict(infile,model,means,stds,features)
+        pred_ogt = predict(infile,model,means,stds,features,p)
         outf.write('{0}\t{1}\n'.format(infile.split('/')[-1], pred_ogt))
 
     else:
         for name in os.listdir(indir):
             if name.startswith('.'): continue
-            pred_ogt = predict(os.path.join(indir,name),model,means,stds,features)
+            if not name.endswith('.fasta'): continue
+            pred_ogt = predict(os.path.join(indir,name),model,means,stds,features,p)
             outf.write('{0}\t{1}\n'.format(name, pred_ogt))
 
 ################################################################################
@@ -194,6 +193,11 @@ def get_uniprot_ids_of_ec(ec,annofile,temps,outdir):
     subdf = pd.DataFrame(data=data,columns=df.columns)
     subout = os.path.join(outdir,'{}_all.tsv'.format(ec))
     subdf.to_csv(subout,sep='\t')
+
+    writer = pd.ExcelWriter(subout.replace('.tsv','.xlsx'))
+    df.to_excel(writer,'Sheet1')
+    writer.save()
+
     return list(subdf['uniprot_id'])
 
 def build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir):
@@ -208,15 +212,15 @@ def build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir):
         fhand.write('>{0}\n{1}\n'.format(rec.id,rec.seq))
     fhand.close()
 
-def run_blastp(ec,seqfile,cpu_num,outdir):
+def run_blastp(ec,seqfile,cpu_num,outdir,evalue):
     dbseq = os.path.join(outdir,'{0}_all.fasta'.format(ec))
     db = os.path.join(outdir,'db')
     out = os.path.join(outdir,'blast_{}.tsv'.format(ec))
 
     cmd = '''makeblastdb -dbtype prot -in {0} -out {1}
-    blastp -query {2} -db {1} -outfmt 6 -num_threads {3} -out {4} -evalue 1e-10 -max_hsps 1
+    blastp -query {2} -db {1} -outfmt 6 -num_threads {3} -out {4} -evalue {5} -max_hsps 1
 
-    '''.format(dbseq,db,seqfile,cpu_num,out)
+    '''.format(dbseq,db,seqfile,cpu_num,out,evalue)
 
     os.system(cmd)
 
@@ -292,26 +296,17 @@ def build_output(blastRes,seqInfo,outdir,seqfile):
     writer.save()
 
 
-def getHomo():
-    args = parse_args()
+def getEnzymes(args):
     seqfile = args.get('-seq',None)
     ec = args.get('-ec',None)
     outdir = args.get('-outdir',None)
-    cpu_num = args.get('-num_threads',1)
-    temps = args.get('-trg','-50,200')
+    cpu_num = int(args.get('-p',1))
+    temps = args.get('-temp_range','-50,200')
     temps = [float(item) for item in temps.split(',')]
+    evalue = args.get('-evalue','1e-10')
 
-    if seqfile is None or ec is None:
-        sys.exit('''
-        Please check your inputs a gain.
-        Usage:
-            tome getHomo -seq seq.fasta -trg 50,200 -outdir -p number
+    if ec is None: sys.exit('Error: Please specify ec number.')
 
-        -seq: a fasta file that contains protein sequence of the query enzyme
-        -outdir: outdir
-        -p: num_threads,int
-
-        \n''')
     if outdir is None: outdir = './'
     if not os.path.exists(outdir): os.mkdir(outdir)
 
@@ -324,6 +319,7 @@ def getHomo():
     print_out('{0} sequences were found'.format(len(uniprot_ids)))
     print_out('')
 
+    if seqfile is None: sys.exit('Done!')
     print_out('step 2: build fasta file for blast')
     build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir)
 
@@ -343,15 +339,72 @@ def getHomo():
     os.system('rm {0}*'.format(dbfile))
 
 if __name__ == '__main__':
+    args = parse_args()
 
-    for i in range(len(sys.argv)):
-        if 'tome' in sys.argv[i]:
-            met = sys.argv[i+1]
-            break
-    if met == 'predOGT': predOGT()
-    elif met == 'getHomo': getHomo()
+    if args.get('-help',None) is not None and args.get('method',None) is None:
+        help_msg = '''
+        Tome (Temperature optima for microorganisms and enzymes) is an open
+        source suite for two purposes:
+        (1) predict the optimal growth temperature from proteome sequences
+        (2) get homologue enzymes for a given ec number with/without a seqeunce
+
+        Tome Version 1.1 (built on Nov 23 2018)
+
+        Main tools:
+            predOGT     Predict optimal growth temperature(s) for one/many microorganisms
+            getEnzymes  Get homologue enzymes for a given ec number with/without a seqeunce
+
+        A detailed list of options can be obtained by calling 'tome predOGT -help'for
+        predOGT or 'tome getEnzymes -help' for getEnzymes
+
+        Gang Li
+        2018-11-23
+        '''
+        sys.exit(help_msg)
+
+    if args['method'] == 'predOGT':
+        if args.get('-help',None) is not None or len(args)<1:
+            help_msg = '''
+        Usage:
+        tome predOGT [Options]
+
+        Options:
+            -fasta  input fasta file containing all protein seqeunces of a proteome.
+                    Required for the prediction of OGT for one microorganism
+            -indir  directory that contains a list of fasta files. Each fasta file
+                    is a proteome. Required for the prediction of OGT for a list of
+                    microorganisms. Important: Fasta file names much endswith .fasta
+            -o      out file name, default: print on the terminal
+            -p      number of threads, default is 1. if set to 0, it will use all cpus
+                    available.
+
+            '''
+            sys.exit(help_msg)
+        else:predOGT(args)
+
+    elif args['method'] == 'getEnzymes':
+        if args.get('-help',None) is not None:
+            help_msg = '''
+        Usage:
+        tome getEnzymes [Options]
+
+        Options:
+            -ec          EC number. Required. 1.1.1.1, for instance
+            -seq         input fasta file which contains the sequence of the query enzyme. Optional
+            -temp_range  the temperature range that target enzymes should be in. For example: 50,100
+                         50 is lower bound and 100 is upper bound of the temperature. Default -50,200
+            -outdir      directory for ouput files. Default is current working folder.
+            -p           number of threads, default is 1. if set to 0, it will use all cpus
+                         available.
+            -evalue      evalue used in ncbi blastp. Default is 1e-10
+
+            '''
+            sys.exit(help_msg)
+
+        else:getEnzymes(args)
+
     else:
-        sys.exit('''
+        sys.exit('''Error:
         Please check your inputs a gain. Tome currently only provides preOGT and
-        getHomo.
+        getEnzymes.
         \n''')
