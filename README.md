@@ -28,14 +28,14 @@ FileName	predOGT (C)
 ```linux
 ./tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.txt
 ```
-Then you will get a output file predicted_ogt.txt with following contents:<br/>
+Then you will get an output file predicted_ogt.txt with following contents:<br/>
 ```linux
 FileName	predOGT (C)
 38_succinivibrio_dextrinosolvens_bacteria.fasta	38.27
 95_pyrococcus_horikoshii_archaea.fasta	94.0
 69_caldanaerobacter_subterraneus_bacteria.fasta	70.0
 ```
-### 3. Get enzymes for an given ec number. One can specify the temperature range for enzyme temperature optima.
+### 3. Get enzymes for a given ec number. One can specify the temperature range for enzyme temperature optima.
 ```linux
 tome getEnzymes -ec [ec number] -temp_range 0,100 -outdir outdir
 ```
