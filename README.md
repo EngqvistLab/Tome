@@ -26,7 +26,14 @@ FileName	predOGT (C)
 
 ### 2. Predict optimal growth temperatures for a list of microorganisms
 ```linux
-tome predOGT -indir [dir_to_proteomes] -o outfile
+./tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.txt
+```
+Then you will get a output file predicted_ogt.txt with following contents:<br/>
+```linux
+FileName	predOGT (C)
+38_succinivibrio_dextrinosolvens_bacteria.fasta	38.27
+95_pyrococcus_horikoshii_archaea.fasta	94.0
+69_caldanaerobacter_subterraneus_bacteria.fasta	70.0
 ```
 ### 3. Get enzymes for an given ec number. One can specify the temperature range for enzyme temperature optima.
 ```linux
