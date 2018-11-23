@@ -44,10 +44,51 @@ higher 50 °C.
 ```linux
 ./tome getEnzymes -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_without_seq/
 ```
+Two output files will be generated: test/enzyme_without_seq/3.2.1.1_all.fasta and
+test/enzyme_without_seq/3.2.1.1_all.xlsx
+3.2.1.1_all.fasta contains all sequences for this EC number. This can be used for
+mutisequence alignment with tools like Clustal Omega (https://www.ebi.ac.uk/Tools/msa/clustalo/)
+enzyme_without_seq/3.2.1.1_all.xlsx contains following columns:
+* uniprot id
+* domain: Domain information of source organism (Archaea/Bacteria/Eukaryote)
+* organism: name of source organism
+* source: if the growth temperature is predicted or experimentally determined
+* growth_temp: optimal growth temperature of source organism
+* seqeunce: protein sequence
 
 ### 4. Get homologous enzymes for an given ec number and sequence.
-```linux
-tome getEnzymes -seq seq.fasta -ec [ec number] -temp_range 0,100 -outdir outdir
+For example, we want to get all homologs of an enzyme with EC 3.2.1.1
+from Photobacterium profundum (OGT = 13°C). We want those homologs with a temperature
+optima higher 50 °C. The seqeuence for this enzyme is
 ```
+>Q1Z0D7
+MTSLFNTEYASTLSAPSVATNVILHAFDWPYSKVTENAKAIADNGYKAILVSPPLKSFHSKDGTQWWQRYQPQDYRVIDN
+QLGNTNDFRTMVEILSLHDIDIYADIVFNHMANESHERSDLNYPNSNIISQYKDKREYFDSIKLFGDLSQPLFSKDDFLS
+AFPIKDWKDPWQVQHGRISSGGSDPGLPTLKNNENVVKKQKLYLKALKKIGVKGFRIDAAKHMTLDHIQELCDEDITDGI
+HIFGEIITDGGATKEEYELFLQPYLEKTTLGAYDFPLFHTVLDVFNKNASMASLINPYSLGSALENQRAITFAITHDIPN
+NDVFLDQVMSEKNEQLAYCYILGRDGGVPLIYTDLDTSGIKNSRGKPRWCEAWNDPIMAKMIHFHNIMHCQPMVIIEQTL
+DLLVFSRGHSGIVAINKGKTAVCYKLPAKYSEQDHTEIKEVINMEGVKLSPPSLSTEAGVILQLPAQSCAMLMV
+```
+
+```linux
+./tome getEnzymes -seq test/enzyme_with_seq/test.fasta -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_with_seq/
+```
+Five output files will be created:
+* 3.2.1.1_all.fasta: the same file as described in Section 3
+* 3.2.1.1_all.xlsx: the same file as described in Section 3
+* blast_3.2.1.1.tsv: blast results in outfmt 6 format
+* Q1Z0D7_homologs.fasta: a fasta file which contains seqeunces for all homologs of query enzyme
+* Q1Z0D7_homologs.xlsx: an excel file with following columns:
+  * uniprot id
+  * Identity(%) from blast
+  * Coverage(%) from blast
+  * domain: Domain information of source organism (Archaea/Bacteria/Eukaryote)
+  * organism: name of source organism
+  * source: if the growth temperature is predicted or experimentally determined
+  * growth_temp: optimal growth temperature of source organism
+  * seqeunce: protein sequence
+
+In this test case, 13 homologs with a temperature optima higher than 50 °C were found.
+
 
 Gang Li<br/>

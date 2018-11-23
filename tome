@@ -183,22 +183,20 @@ def predOGT(args):
 # Find homologues for a given enzyme with the same ec number
 ################################################################################
 
-def get_uniprot_ids_of_ec(ec,annofile,temps,outdir):
+def get_enzymes_of_ec(ec,annofile,temps,outdir):
     df = pd.read_csv(annofile,index_col=0,sep='\t')
     subdf = df.loc[ec,:]
+    print_out('{0} sequences were found for {1}'.format(subdf.shape[0],ec))
+
     data = subdf.values
     data = data[data[:,-1]>temps[0],:]
     data = data[data[:,-1]<temps[1],:]
 
-    subdf = pd.DataFrame(data=data,columns=df.columns)
-    subout = os.path.join(outdir,'{}_all.tsv'.format(ec))
-    subdf.to_csv(subout,sep='\t')
+    index = pd.Index(data[:,0],name=df.columns[0])
+    subdf = pd.DataFrame(data=data[:,1:],columns=df.columns[1:],index=index)
+    print_out('{0} sequences were found between {1}'.format(subdf.shape[0],temps))
 
-    writer = pd.ExcelWriter(subout.replace('.tsv','.xlsx'))
-    df.to_excel(writer,'Sheet1')
-    writer.save()
-
-    return list(subdf['uniprot_id'])
+    return subdf
 
 def build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir):
     is_target = dict()
@@ -207,10 +205,16 @@ def build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir):
     outfafile = os.path.join(outdir,'{0}_all.fasta'.format(ec))
     fhand = open(outfafile,'w')
 
+    subseqs,ids = [],[]
     for rec in SeqIO.parse(brenda_seq_file,'fasta'):
         if not is_target.get(rec.id,False): continue
         fhand.write('>{0}\n{1}\n'.format(rec.id,rec.seq))
+        subseqs.append(rec.seq)
+        ids.append(rec.id)
+
     fhand.close()
+    dfseqs = pd.DataFrame(data={'sequence':subseqs},index=ids)
+    return dfseqs
 
 def run_blastp(ec,seqfile,cpu_num,outdir,evalue):
     dbseq = os.path.join(outdir,'{0}_all.fasta'.format(ec))
@@ -262,14 +266,14 @@ def build_output(blastRes,seqInfo,outdir,seqfile):
     query_seq = query[query_id].seq
 
     # write the fasta file
-    outfasta = os.path.join(outdir,query_id+'_out.fasta')
+    outfasta = os.path.join(outdir,query_id+'_homologs.fasta')
     fhand = open(outfasta,'w')
     fhand.write('>{0}\n{1}\n'.format(query_id,query_seq))
     for id, rec in blastRes.items(): fhand.write('>{0}\n{1}\n'.format(id,rec[-1]))
 
-    # build a dataframe and export it to excel and tsv file
-    outcsv = os.path.join(outdir,query_id+'_out.tsv')
-    outexcel = os.path.join(outdir,query_id+'_out.xlsx')
+    # build a dataframe and export it to excel file
+    #outcsv = os.path.join(outdir,query_id+'_homologs.tsv')
+    outexcel = os.path.join(outdir,query_id+'_homologs.xlsx')
 
     data = dict()
     cols = ['id','identity(%)','coverage(%)','domain','organism','source','growth_temp','sequence']
@@ -289,7 +293,7 @@ def build_output(blastRes,seqInfo,outdir,seqfile):
         data['sequence'] += [rec[2]]
 
     df = pd.DataFrame(data=data,columns=cols)
-    df.to_csv(outcsv,sep='\t')
+    #df.to_csv(outcsv,sep='\t')
 
     writer = pd.ExcelWriter(outexcel)
     df.to_excel(writer,'Sheet1')
@@ -315,16 +319,24 @@ def getEnzymes(args):
     brenda_seq_file = os.path.join(path,'external_data/all_enzyme_sequences.fasta')
 
     print_out('step 1: get all uniprot ids with the given ec number')
-    uniprot_ids = get_uniprot_ids_of_ec(ec,annofile,temps,outdir)
-    print_out('{0} sequences were found'.format(len(uniprot_ids)))
+    subdf = get_enzymes_of_ec(ec,annofile,temps,outdir)
+    uniprot_ids = list(subdf.index)
     print_out('')
 
-    if seqfile is None: sys.exit('Done!')
-    print_out('step 2: build fasta file for blast')
-    build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir)
+    print_out('step 2: get seqeunces and saving sequences to fasta format')
+    dfseqs = build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir)
 
+    dfec_out = pd.merge(subdf,dfseqs,left_index=True,right_index=True,how='inner')
+
+    subout = os.path.join(outdir,'{}_all.xlsx'.format(ec))
+    print_out('Saving results to excel format')
+    writer = pd.ExcelWriter(subout)
+    dfec_out.to_excel(writer,'Sheet1')
+    writer.save()
+
+    if seqfile is None: sys.exit('Done!')
     print_out('step 3: run blastp')
-    run_blastp(ec,seqfile,cpu_num,outdir)
+    run_blastp(ec,seqfile,cpu_num,outdir,evalue)
 
     print_out('step 4: get info of hits')
     seqInfo = get_info_for_selected_seqs(annofile,uniprot_ids,ec)
