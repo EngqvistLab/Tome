@@ -24,11 +24,11 @@ tome predOGT -indir [dir_to_proteomes] -o outfile
 ```
 ### 3. Get enzymes for an given ec number. One can specify the temperature range for enzyme temperature optima.
 ```linux
-tome getEC -ec [ec number] -temp_range 0,100 -outdir outdir
+tome getEnzymes -ec [ec number] -temp_range 0,100 -outdir outdir
 ```
 ### 4. Get enzymes for an given ec number. One can specify the temperature range for enzyme temperature optima. In addition, only homologues of the given enzyme sequence would be exported.
 ```linux
-tome getHomo -seq seq.fasta -ec [ec number] -temp_range 0,100 -outdir outdir
+tome getEnzymes -seq seq.fasta -ec [ec number] -temp_range 0,100 -outdir outdir
 ```
 
 Gang Li<br/>
