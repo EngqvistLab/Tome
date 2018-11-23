@@ -26,9 +26,9 @@ FileName	predOGT (C)
 
 ### 2. Predict optimal growth temperatures for a list of microorganisms
 ```linux
-./tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.txt
+./tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
 ```
-Then you will get an output file predicted_ogt.txt with following contents:<br/>
+Then you will get an tab-sperated output file predicted_ogt.tsv with following contents:<br/>
 ```linux
 FileName	predOGT (C)
 38_succinivibrio_dextrinosolvens_bacteria.fasta	38.27
