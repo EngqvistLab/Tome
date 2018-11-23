@@ -45,4 +45,3 @@ tome getEnzymes -seq seq.fasta -ec [ec number] -temp_range 0,100 -outdir outdir
 ```
 
 Gang Li<br/>
-2018-10-30
