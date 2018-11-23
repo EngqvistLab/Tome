@@ -16,8 +16,14 @@ Pyhton 2.7 or Python 3 should both work.
 ## Usage:
 ### 1. Prediction of optimal growth temperature for one microorganism
 ```linux
-tome predOGT -fasta proteome.fasta -o outfile
+./tome predOGT -fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
 ```
+Then you will get following results:<br/>
+```linux
+FileName	predOGT (C)
+95_pyrococcus_horikoshii_archaea.fasta	94.0
+```
+
 ### 2. Predict optimal growth temperatures for a list of microorganisms
 ```linux
 tome predOGT -indir [dir_to_proteomes] -o outfile
