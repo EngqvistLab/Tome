@@ -360,7 +360,7 @@ def getEnzymes(args):
     dbfile = os.path.join(outdir,'db')
     os.system('rm {0}*'.format(dbfile))
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
 
     if args.get('-help',None) is not None and args.get('method',None) is None:
@@ -430,3 +430,6 @@ if __name__ == '__main__':
         Please check your inputs a gain. Tome currently only provides preOGT and
         getEnzymes.
         \n''')
+
+if __name__ == '__main__':
+    main()
