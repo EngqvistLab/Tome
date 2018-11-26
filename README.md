@@ -6,7 +6,7 @@ temperature;
 * (2) find the homologues for a given seqeuence with the same EC nubmer.
 
 ## Installation
-
+pip install tome
 ## Depedences
 * ncbi-blast-2.7.1+ (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
 * pandas
