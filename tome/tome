@@ -183,6 +183,16 @@ def predOGT(args):
 # Find homologues for a given enzyme with the same ec number
 ################################################################################
 
+# to be completed
+def download_external_data():
+    realpath = os.path.realpath(__file__)
+    external_data_path = os.mkdir(os.path.join(realpath,'external_data/'))
+    try:
+        'wget ...{}'.format(external_data_path)
+    except:
+        'curl ...{}'.format(external_data_path)
+
+
 def get_enzymes_of_ec(ec,annofile,temps,outdir):
     df = pd.read_csv(annofile,index_col=0,sep='\t')
     subdf = df.loc[ec,:]
