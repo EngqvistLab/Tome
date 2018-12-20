@@ -6,12 +6,20 @@ temperature;
 * (2) find the homologues for a given seqeuence with the same EC nubmer.
 
 ## Installation
+##### 1. download tome package
+##### 2. open terminal
+##### 3. change directory to the tome package
 ```linux
-pip install tome
+cd [directory to tome]
+```
+##### 4. run following pip command
+```linux
+pip install -e .
 ```
 
 ## Depedences
 * ncbi-blast-2.7.1+ (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
+(This is only mandatory for 'tome predOGT -seq')
 * pandas
 * Biopython
 * numpy
@@ -116,4 +124,3 @@ Five output files will be created:
 In this test case, 13 homologs with a temperature optima higher than 50 °C were found.
 
 Gang Li<br/>
-2018-11-23
