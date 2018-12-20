@@ -15,7 +15,6 @@ pip install tome
 * pandas
 * Biopython
 * numpy
-* collections
 * sklearn
 * Pyhton 2.7 or Python 3
 
