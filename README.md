@@ -21,7 +21,8 @@ pip install tome
 
 
 ## Usage:
-### 1. Prediction of optimal growth temperature for one microorganism
+### 1. Prediction of optimal growth temperature
+#### 1.1 Prediction of optimal growth temperature for one microorganism
 ```linux
 ./tome predOGT -fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
 ```
@@ -31,7 +32,7 @@ FileName	predOGT (C)
 95_pyrococcus_horikoshii_archaea.fasta	94.0
 ```
 
-### 2. Predict optimal growth temperatures for a list of microorganisms
+#### 1.2 Predict optimal growth temperatures for a list of microorganisms
 ```linux
 ./tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
 ```
@@ -43,7 +44,27 @@ FileName	predOGT (C)
 95_pyrococcus_horikoshii_archaea.fasta	94.0
 69_caldanaerobacter_subterraneus_bacteria.fasta	70.0
 ```
-### 3. Get enzymes for a given ec number.
+#### 1.3 train the model
+In case there would be some warnings due to the versions of sklearn when loading
+the model, one can use following command to train the model again:
+```linux
+./tome predOGT -train
+```
+Expected output after training is
+```
+A new model has beed successfully trained.
+Model performance:
+        RMSE: 2.159489340036136
+          r2: 0.9552614628185572
+  Pearsnon r:(0.9775886084277753, 0.0)
+  Spearman r:SpearmanrResult(correlation=0.93331975456613, pvalue=0.0)
+
+Saving the new model to replace the original one...
+Done!
+```
+
+### 2. Get enzyme sequences
+#### 2.1 Get enzymes for a given ec number.
 For example, we want to get the enzymes with EC 3.2.1.1 with a temperature optima
 higher 50 °C.
 ```linux
@@ -61,7 +82,7 @@ enzyme_without_seq/3.2.1.1_all.xlsx contains following columns:
 * growth_temp: optimal growth temperature of source organism
 * seqeunce: protein sequence
 
-### 4. Get homologous enzymes for an given ec number and sequence.
+#### 2.2 Get homologous enzymes for an given ec number and sequence.
 For example, we want to get all homologs of an enzyme with EC 3.2.1.1
 from Photobacterium profundum (OGT = 13°C). We want those homologs with a temperature
 optima higher 50 °C. The seqeuence for this enzyme is

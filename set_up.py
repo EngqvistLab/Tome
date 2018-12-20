@@ -8,7 +8,7 @@ long_description = open('README.md').read()
 version = '1.0.0'
 
 setup(
-	name='Tome',    # This is the name of your PyPI-package.
+	name='tome',    # This is the name of your PyPI-package.
 	description='Temperature optima for microorgianisms and enzymes',#package description
     long_description=long_description,
     version=version,                          # MAJOR.MINOR.PATCH

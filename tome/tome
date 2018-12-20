@@ -9,6 +9,7 @@ from multiprocessing import Pool, cpu_count
 import numpy as np
 
 
+
 # Esimtation of OGT for organism(s)
 ################################################################################
 def print_out(line):
@@ -43,6 +44,67 @@ def load_means_stds(predictor):
         features.append(cont[0])
     return means,stds,features
 
+def train_model():
+    from sklearn import svm
+    from sklearn.metrics import r2_score
+    from scipy.stats import spearmanr,pearsonr
+    from sklearn.metrics import mean_squared_error as MSE
+
+    path = os.path.dirname(os.path.realpath(__file__))
+    predictor = os.path.join(path,'model/OGT_svr.pkl')
+    def get_standardizer(X):
+        mean,std=list(),list()
+        for i in range(X.shape[1]):
+            mean.append(np.mean(X[:,i]))
+            std.append(float(np.var(X[:,i]))**0.5)
+        return mean,std
+
+    def standardize(X):
+        Xs=np.zeros_like(X)
+        n_sample,n_features=X.shape[0],X.shape[1]
+        for i in range(n_features):
+            Xs[:,i]=(X[:,i]-np.mean(X[:,i]))/float(np.var(X[:,i]))**0.5
+        return Xs
+
+    # load training dataset
+    trainfile = os.path.join(path,'data/train.csv')
+    df = pd.read_csv(trainfile,index_col=0)
+    X = df.values[:,:-1]
+    Y = df.values[:,-1].ravel()
+    features = df.columns[:-1]
+
+    Xs = standardize(X)
+    model = svm.SVR(kernel='rbf',C = 64.0, epsilon = 1.0)
+    model.fit(Xs,Y)
+
+    # get model performance:
+    p = model.predict(Xs)
+    rmse = np.sqrt(MSE(Y,p))
+    r2 = r2_score(Y,p)
+    r_spearman = spearmanr(p,Y)
+    r_pearson = pearsonr(p,Y)
+
+    print_out('A new model has beed successfully trained.')
+    print_out('Model performance:')
+    print_out('        RMSE: '+ str(rmse))
+    print_out('          r2: ' + str(r2))
+    print_out('  Pearsnon r:' + str(r_pearson))
+    print_out('  Spearman r:' + str(r_spearman))
+    print_out('')
+
+    # save model
+    print_out('Saving the new model to replace the original one...')
+    joblib.dump(model, predictor)
+
+    fea = open(predictor.replace('pkl','f'),'w')
+    means, stds = get_standardizer(X)
+    fea.write('#Feature_name\tmean\tstd\n')
+    for i in range(len(means)):
+        fea.write('{0}\t{1}\t{2}\n'.format(features[i], means[i], stds[i]))
+    fea.close()
+    print_out('Done!')
+    print_out('')
+
 def load_model():
     path = os.path.dirname(os.path.realpath(__file__))
     predictor = os.path.join(path,'model/OGT_svr.pkl')
@@ -50,63 +112,10 @@ def load_model():
         model=joblib.load(predictor)
         means,stds,features = load_means_stds(predictor)
     except:
-        sys.stdout.write('Failed loading the model. Trying to train the model...')
-        from sklearn import svm
-        from sklearn.metrics import r2_score
-        from scipy.stats import spearmanr,pearsonr
-
-        def get_standardizer(X):
-            mean,std=list(),list()
-            for i in range(X.shape[1]):
-                mean.append(np.mean(X[:,i]))
-                std.append(float(np.var(X[:,i]))**0.5)
-            return mean,std
-
-        def standardize(X):
-            Xs=np.zeros_like(X)
-            n_sample,n_features=X.shape[0],X.shape[1]
-            for i in range(n_features):
-                Xs[:,i]=(X[:,i]-np.mean(X[:,i]))/float(np.var(X[:,i]))**0.5
-            return Xs
-
-        # load training dataset
-        trainfile = os.path.join(path,'data/train.csv')
-        df = pd.read_csv(trainfile,index_col=0)
-        X = df.values[:,:-1]
-        Y = df.values[:,-1].ravel()
-        features = df.columns[:-1]
-
-        Xs = standardize(X)
-        model = svm.SVR(kernel='rbf',C = 64.0, epsilon = 1.0)
-        model.fit(Xs,Y)
-
-        # get model performance:
-        p = model.predict(Xs)
-        rmse = np.sqrt(MSE(p,Y))
-        r2 = r2_score(Y,p)
-        r_spearman = spearmanr(p,Y)
-        r_pearson = pearsonr(p,Y)
-
-        sys.stdout.write('A new model has beed successfully trained.')
-        sys.stdout.write('Model performance:')
-        sys.stdout.write('        RMSE: '+ str(rmse))
-        sys.stdout.write('          r2: ' + str(r2))
-        sys.stdout.write('  Pearsnon r:' + str(r_pearson))
-        sys.stdout.write('  Spearman r:' + str(r_spearman))
-        sys.stdout.write('')
-
-        # save model
-        sys.stdout.write('Saving new model to replace the original one...')
-        joblib.dump(model, predictor)
-
-        fea = open(predictor.replace('pkl','f'),'w')
-        means, stds = get_standardizer(X)
-        fea.write('#Feature_name\tmean\tstd\n')
-        for i in range(len(mean)):
-            fea.write('{0}\t{1}\t{2}\n'.format(features[i], mean[i], stds[i]))
-        fea.close()
-        sys.stdout.write('Done!')
-        sys.stdout.write('')
+        print_out('Failed loading the model. Trying to train the model...')
+        train_model()
+        model=joblib.load(predictor)
+        means,stds,features = load_means_stds(predictor)
 
     return model,means,stds,features
 
@@ -402,6 +411,7 @@ def main():
 
             '''
             sys.exit(help_msg)
+        elif args.get('-train',None) is not None: train_model()
         else:predOGT(args)
 
     elif args['method'] == 'getEnzymes':
