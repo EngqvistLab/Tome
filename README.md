@@ -1,7 +1,7 @@
 # Tome: Temperature optima for microorgianisms and enzymes
-Tome (Temperature optima for microorganisms and enzymes) is an open source suite for two purposes:
+Tome (Temperature optima for microorganisms and enzymes) is an open source suite for two fundamental applications:
   * predict the optimal growth temperature from proteome sequences
-  * get homologue enzymes for a given ec number with/without a seqeunce
+  * get homologue enzymes for a given ec number with/without a sequence
 
 ## Installation
 ##### (1). Download tome package
@@ -41,7 +41,7 @@ FileName	predOGT (C)
 ```linux
 tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
 ```
-Then you will get an tab-sperated output file predicted_ogt.tsv with following
+Then you will get an tab-seperated output file predicted_ogt.tsv with following
 contents:<br/>
 ```
 FileName	predOGT (C)
@@ -90,7 +90,7 @@ enzyme_without_seq/3.2.1.1_all.xlsx contains following columns:
 #### 2.2 Get homologous enzymes for an given ec number and sequence.
 For example, we want to get all homologs of an enzyme with EC 3.2.1.1
 from Photobacterium profundum (OGT = 13°C). We want those homologs with a temperature
-optima higher 50 °C. The seqeuence for this enzyme is
+optima higher 50 °C. The sequence for this enzyme is
 ```
 >Q1Z0D7
 MTSLFNTEYASTLSAPSVATNVILHAFDWPYSKVTENAKAIADNGYKAILVSPPLKSFHSKDGTQWWQRYQPQDYRVIDN
@@ -108,7 +108,7 @@ Five output files will be created:
 * 3.2.1.1_all.fasta: the same file as described in Section 3
 * 3.2.1.1_all.xlsx: the same file as described in Section 3
 * blast_3.2.1.1.tsv: blast results in outfmt 6 format
-* Q1Z0D7_homologs.fasta: a fasta file which contains seqeunces for all homologs of query enzyme
+* Q1Z0D7_homologs.fasta: a fasta file which contains sequences for all homologs of query enzyme
 * Q1Z0D7_homologs.xlsx: an excel file with following columns:
   * uniprot id
   * Identity(%) from blast
@@ -117,7 +117,7 @@ Five output files will be created:
   * organism: name of source organism
   * source: if the growth temperature is predicted or experimentally determined
   * growth_temp: optimal growth temperature of source organism
-  * seqeunce: protein sequence
+  * sequence: protein sequence
 
 In this test case, 13 homologs with a temperature optima higher than 50 °C were found.
 
