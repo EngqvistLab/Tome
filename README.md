@@ -130,8 +130,7 @@ tome predOGT -help
 tome getEnzymes -help
 ```
 Or you can directly contact
-Martin Engqvist: <martin.engqvist@chalmers.se><br/>
-or<br/>
-Gang Li: <gangl@chalmers.se><br/>
+Martin Engqvist: <martin.engqvist@chalmers.se> or Gang Li: <gangl@chalmers.se><br/>
+<br/>
 Gang Li<br/>
 2018.12
