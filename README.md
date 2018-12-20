@@ -1,18 +1,16 @@
 # Tome: Temperature optima for microorgianisms and enzymes
-Estimation of enzyme temperature optima with optimal growth temperature of parent microorganism<br/>
-This method has two submodules:
-* (1) model for the prediction of optimal growth
-temperature;
-* (2) find the homologues for a given seqeuence with the same EC nubmer.
+Tome (Temperature optima for microorganisms and enzymes) is an open source suite for two purposes:
+  * predict the optimal growth temperature from proteome sequences
+  * get homologue enzymes for a given ec number with/without a seqeunce
 
 ## Installation
 ##### (1). Download tome package
 ##### (2). Open your terminal
 ##### (3). Change directory to the tome package
 ```linux
-cd [directory to tome]
+cd [directory to tome, where setup.py is]
 ```
-##### (4). Run following pip command
+##### (4). Run following command
 ```linux
 pip install -e .
 ```
@@ -127,7 +125,6 @@ In this test case, 13 homologs with a temperature optima higher than 50 °C were
 ## Help:
 Use following commands you can get detailed information about the arguments of tome.
 ```linux
-tome
 tome -help
 tome predOGT -help
 tome getEnzymes -help
