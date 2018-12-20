@@ -24,7 +24,7 @@ pip install tome
 ### 1. Prediction of optimal growth temperature
 #### 1.1 Prediction of optimal growth temperature for one microorganism
 ```linux
-./tome predOGT -fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
+tome predOGT -fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
 ```
 Then you will get following results:<br/>
 ```
@@ -34,7 +34,7 @@ FileName	predOGT (C)
 
 #### 1.2 Predict optimal growth temperatures for a list of microorganisms
 ```linux
-./tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
+tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
 ```
 Then you will get an tab-sperated output file predicted_ogt.tsv with following
 contents:<br/>
@@ -68,7 +68,7 @@ Done!
 For example, we want to get the enzymes with EC 3.2.1.1 with a temperature optima
 higher 50 °C.
 ```linux
-./tome getEnzymes -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_without_seq/
+tome getEnzymes -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_without_seq/
 ```
 Two output files will be generated: test/enzyme_without_seq/3.2.1.1_all.fasta and
 test/enzyme_without_seq/3.2.1.1_all.xlsx
@@ -97,7 +97,7 @@ DLLVFSRGHSGIVAINKGKTAVCYKLPAKYSEQDHTEIKEVINMEGVKLSPPSLSTEAGVILQLPAQSCAMLMV
 ```
 
 ```linux
-./tome getEnzymes -seq test/enzyme_with_seq/test.fasta -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_with_seq/
+tome getEnzymes -seq test/enzyme_with_seq/test.fasta -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_with_seq/
 ```
 Five output files will be created:
 * 3.2.1.1_all.fasta: the same file as described in Section 3
