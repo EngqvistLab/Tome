@@ -6,17 +6,17 @@ temperature;
 * (2) find the homologues for a given seqeuence with the same EC nubmer.
 
 ## Installation
-##### 1. download tome package
-##### 2. open terminal
-##### 3. change directory to the tome package
+##### (1). Download tome package
+##### (2). Open your terminal
+##### (3). Change directory to the tome package
 ```linux
 cd [directory to tome]
 ```
-##### 4. run following pip command
+##### (4). Run following pip command
 ```linux
 pip install -e .
 ```
-
+##### (5) Now you can use 'tome' via command line
 ## Depedences
 * ncbi-blast-2.7.1+ (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
 (This is only mandatory for 'tome predOGT -seq')
@@ -123,4 +123,18 @@ Five output files will be created:
 
 In this test case, 13 homologs with a temperature optima higher than 50 °C were found.
 
+
+## Help:
+Use following commands you can get detailed information about the arguments of tome.
+```linux
+tome
+tome -help
+tome predOGT -help
+tome getEnzymes -help
+```
+Or you can directly contact
+Martin Engqvist <martin.engqvist@chalmers.se>
+or
+Gang Li <gangl@chalmers.se>
 Gang Li<br/>
+2018.12
