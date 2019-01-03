@@ -197,7 +197,7 @@ def predOGT(args):
 
 def download_external_data(link):
     realpath = os.path.dirname(os.path.realpath(__file__))
-    external_data_path = os.mkdir(os.path.join(realpath,'external_data/'))
+    external_data_path = os.path.join(realpath,'external_data/')
     print_out('Downloading data from {0}'.format(link))
     try:
         os.system('wget {0} -P {1}'.format(link,external_data_path))
