@@ -7,7 +7,7 @@ from sklearn.externals import joblib
 from collections import Counter
 from multiprocessing import Pool, cpu_count
 import numpy as np
-
+import subprocess
 
 
 # Esimtation of OGT for organism(s)
@@ -200,11 +200,13 @@ def download_external_data(link):
     external_data_path = os.path.join(realpath,'external_data/')
     print_out('Downloading data from {0}'.format(link))
     try:
-        os.system('wget {0} -P {1}'.format(link,external_data_path))
+        subprocess.call(['wget',link,'-P', external_data_path])
+        #subprocess.call(['wget {0} -P {1}'.format(link,external_data_path)])
     except:
         file_name = link.split('/')[-1]
         file_name = os.path.join(external_data_path,file_name)
-        'curl {0} -o {}'.format(link,file_name)
+        subprocess.call(['curl',link,'-o',file_name])
+        #subprocess.call(['curl {0} -o {}'.format(link,file_name)])
 
 
 def get_enzymes_of_ec(ec,annofile,temps,outdir):
@@ -330,7 +332,7 @@ def getEnzymes(args):
 
     path = os.path.dirname(os.path.realpath(__file__))
     ext_dir = os.path.join(path,'external_data/')
-    if os.path.exists(ext_dir): os.mkdir(ext_dir)
+    if not os.path.exists(ext_dir): os.mkdir(ext_dir)
 
     seqfile = args.get('-seq',None)
     ec = args.get('-ec',None)

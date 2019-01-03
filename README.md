@@ -18,7 +18,10 @@ cd [directory to tome, where setup.py is]
 ```linux
 pip install -e .
 ```
-##### (5) Now you can use 'tome' via command line
+##### (5) Now you can use 'tome' via command line.
+There is a folder named 'test' in the package. One can use the instructions in
+'Usage' section to test the package.
+
 ## Depedences
 * ncbi-blast-2.7.1+ (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
 (This is only mandatory for 'tome predOGT -seq')
@@ -137,4 +140,3 @@ Or you can directly contact
 Martin Engqvist: <martin.engqvist@chalmers.se> or Gang Li: <gangl@chalmers.se><br/>
 <br/>
 Gang Li<br/>
-2018.12
