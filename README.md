@@ -41,7 +41,7 @@ FileName	predOGT (C)
 95_pyrococcus_horikoshii_archaea.fasta	94.0
 ```
 
-#### 1.2 Predict optimal growth temperatures for a list of microorganisms
+#### 1.2 Predict optimal growth temperatures for a list of microorganisms. Fasta files must end with .fasta
 ```linux
 tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
 ```
@@ -57,7 +57,7 @@ FileName	predOGT (C)
 In case there would be some warnings due to the versions of sklearn when loading
 the model, one can use following command to train the model again:
 ```linux
-./tome predOGT -train
+tome predOGT -train
 ```
 Expected output after training is
 ```
