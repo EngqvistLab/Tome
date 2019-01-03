@@ -288,7 +288,7 @@ def build_output(blastRes,seqInfo,outdir,seqfile):
     # 2. a excel file containts the information of the target
 
     query = SeqIO.to_dict(SeqIO.parse(seqfile,'fasta'))
-    query_id = query.keys()[0]
+    query_id = list(query.keys())[0]
     query_seq = query[query_id].seq
 
     # write the fasta file

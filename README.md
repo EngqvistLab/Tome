@@ -107,7 +107,8 @@ HIFGEIITDGGATKEEYELFLQPYLEKTTLGAYDFPLFHTVLDVFNKNASMASLINPYSLGSALENQRAITFAITHDIPN
 NDVFLDQVMSEKNEQLAYCYILGRDGGVPLIYTDLDTSGIKNSRGKPRWCEAWNDPIMAKMIHFHNIMHCQPMVIIEQTL
 DLLVFSRGHSGIVAINKGKTAVCYKLPAKYSEQDHTEIKEVINMEGVKLSPPSLSTEAGVILQLPAQSCAMLMV
 ```
-
+There should be only one sequence in the fasta file. If more than 1 sequence is provided,
+only the first sequence would be used.
 ```linux
 tome getEnzymes -seq test/enzyme_with_seq/test.fasta -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_with_seq/
 ```
