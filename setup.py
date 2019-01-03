@@ -22,9 +22,9 @@ setup(
     package_data={'tome':['data/train.csv',
 						  'model/OGT_svr.f',
 						  'model/OGT_svr.pkl',
-						  'external_data/2_unid_growth_temp_mapping.tsv',
+						  'external_data/enzyme_to_growth_temp_mapping.tsv',
 						  'external_data/all_enzyme_sequences.fasta']},
-	license='Apache License 2.0',
+	license='GPLv3+',
 	classifiers=[
 	# How mature is this project? Common values are
 	#   3 - Alpha
@@ -37,7 +37,7 @@ setup(
 	'Topic :: Scientific/Engineering',
 
 	# Pick your license as you wish (should match "license" above)
-	'License :: OSI Approved :: Apache Software License',
+	'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
 
 	# Specify the Python versions you support here. In particular, ensure
 	# that you indicate whether you support Python 2, Python 3 or both.

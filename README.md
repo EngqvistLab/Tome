@@ -3,6 +3,10 @@ Tome (Temperature optima for microorganisms and enzymes) is an open source suite
   * predict the optimal growth temperature from proteome sequences
   * get homologue enzymes for a given ec number with/without a sequence
 
+## System
+* Mac OS
+* Linux
+
 ## Installation
 ##### (1). Download tome package
 ##### (2). Open your terminal

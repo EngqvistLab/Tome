@@ -193,13 +193,18 @@ def predOGT(args):
 ################################################################################
 
 # to be completed
-def download_external_data():
+# external_data/
+
+def download_external_data(link):
     realpath = os.path.realpath(__file__)
     external_data_path = os.mkdir(os.path.join(realpath,'external_data/'))
+    print_out('Downloading data from {0}'.format(link))
     try:
-        'wget ...{}'.format(external_data_path)
+        os.system('wget {0} -P {1}'.format(link,external_data_path))
     except:
-        'curl ...{}'.format(external_data_path)
+        file_name = link.split('/')[-1]
+        file_name = os.path.join(external_data_path,file_name)
+        'curl {0} -o {}'.format(link,file_name)
 
 
 def get_enzymes_of_ec(ec,annofile,temps,outdir):
@@ -320,6 +325,11 @@ def build_output(blastRes,seqInfo,outdir,seqfile):
 
 
 def getEnzymes(args):
+    fasta_link = 'https://zenodo.org/record/2530589/files/all_enzyme_sequences.fasta'
+    anno_link = 'https://zenodo.org/record/2530589/files/enzyme_to_growth_temp_mapping.tsv'
+
+    if os.path.exists('external_data/'): os.mkdir('external_data/')
+
     seqfile = args.get('-seq',None)
     ec = args.get('-ec',None)
     outdir = args.get('-outdir',None)
@@ -334,8 +344,11 @@ def getEnzymes(args):
     if not os.path.exists(outdir): os.mkdir(outdir)
 
     path = os.path.dirname(os.path.realpath(__file__))
-    annofile = os.path.join(path,'external_data/2_unid_growth_temp_mapping.tsv')
+    annofile = os.path.join(path,'external_data/enzyme_to_growth_temp_mapping.tsv')
     brenda_seq_file = os.path.join(path,'external_data/all_enzyme_sequences.fasta')
+
+    if not os.path.isfile(annofile): download_external_data(anno_link)
+    if not os.path.isfile(brenda_seq_file): download_external_data(fasta_link)
 
     print_out('step 1: get all uniprot ids with the given ec number')
     subdf = get_enzymes_of_ec(ec,annofile,temps,outdir)
