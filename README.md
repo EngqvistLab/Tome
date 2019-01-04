@@ -4,7 +4,7 @@ Tome (Temperature optima for microorganisms and enzymes) is an open source suite
   * get homologue enzymes for a given ec number with/without a sequence
 
 ## System
-* Mac OS
+* macOS
 * Linux
 
 ## Installation
