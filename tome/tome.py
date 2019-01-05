@@ -88,7 +88,7 @@ def train_model():
     print_out('Model performance:')
     print_out('        RMSE: '+ str(rmse))
     print_out('          r2: ' + str(r2))
-    print_out('  Pearsnon r:' + str(r_pearson))
+    print_out('  Pearson r:' + str(r_pearson))
     print_out('  Spearman r:' + str(r_spearman))
     print_out('')
 
