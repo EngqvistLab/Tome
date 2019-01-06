@@ -36,7 +36,7 @@ There is a folder named 'test' in the package. One can use the instructions in
 ### 1. Prediction of optimal growth temperature
 #### 1.1 Prediction of optimal growth temperature for one microorganism
 ```linux
-tome predOGT -fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
+tome predOGT --fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
 ```
 Then you will get following results:<br/>
 ```
@@ -46,7 +46,7 @@ FileName	predOGT (C)
 
 #### 1.2 Predict optimal growth temperatures for a list of microorganisms. Fasta files must end with .fasta
 ```linux
-tome predOGT -indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
+tome predOGT --indir test/proteomes/ -o test/proteomes/predicted_ogt.tsv
 ```
 Then you will get an tab-seperated output file predicted_ogt.tsv with following
 contents:<br/>
@@ -80,13 +80,13 @@ Done!
 For example, we want to get the enzymes with EC 3.2.1.1 with a temperature optima
 higher 50 °C.
 ```linux
-tome getEnzymes -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_without_seq/
+tome getEnzymes --ec 3.2.1.1 --temp_range 50,200 --outdir test/enzyme_without_seq/
 ```
 Two output files will be generated: test/enzyme_without_seq/3.2.1.1_all.fasta and
-test/enzyme_without_seq/3.2.1.1_all.xlsx
+test/enzyme_without_seq/3.2.1.1_all.tsv
 3.2.1.1_all.fasta contains all sequences for this EC number. This can be used for
 mutisequence alignment with tools like Clustal Omega (https://www.ebi.ac.uk/Tools/msa/clustalo/)
-enzyme_without_seq/3.2.1.1_all.xlsx contains following columns:
+enzyme_without_seq/3.2.1.1_all.tsv contains following columns:
 * uniprot id
 * domain: Domain information of source organism (Archaea/Bacteria/Eukaryote)
 * organism: name of source organism
@@ -110,14 +110,11 @@ DLLVFSRGHSGIVAINKGKTAVCYKLPAKYSEQDHTEIKEVINMEGVKLSPPSLSTEAGVILQLPAQSCAMLMV
 There should be only one sequence in the fasta file. If more than 1 sequence is provided,
 only the first sequence would be used.
 ```linux
-tome getEnzymes -seq test/enzyme_with_seq/test.fasta -ec 3.2.1.1 -temp_range 50,200 -outdir test/enzyme_with_seq/
+tome getEnzymes --seq test/enzyme_with_seq/test.fasta --ec 3.2.1.1 --temp_range 50,200 --outdir test/enzyme_with_seq/
 ```
-Five output files will be created:
-* 3.2.1.1_all.fasta: the same file as described in Section 3
-* 3.2.1.1_all.xlsx: the same file as described in Section 3
-* blast_3.2.1.1.tsv: blast results in outfmt 6 format
+Two output files will be created:
 * Q1Z0D7_homologs.fasta: a fasta file which contains sequences for all homologs of query enzyme
-* Q1Z0D7_homologs.xlsx: an excel file with following columns:
+* Q1Z0D7_homologs.tsv: a tab-seperated file with following columns:
   * uniprot id
   * Identity(%) from blast
   * Coverage(%) from blast
@@ -133,9 +130,9 @@ In this test case, 13 homologs with a temperature optima higher than 50 °C were
 ## Help:
 Use following commands you can get detailed information about the arguments of tome.
 ```linux
-tome -help
-tome predOGT -help
-tome getEnzymes -help
+tome --help
+tome predOGT --help
+tome getEnzymes --help
 ```
 Or you can directly contact
 Martin Engqvist: <martin.engqvist@chalmers.se> or Gang Li: <gangl@chalmers.se><br/>

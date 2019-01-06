@@ -20,8 +20,11 @@ def parse_args():
     for i in range(len(sys.argv)):
         item = sys.argv[i]
         if item.startswith('-'):
+            item = item.replace('-','')
             try:args[item] = sys.argv[i+1]
             except:args[item] = ''
+
+            if item == 'h': args['help'] = ''
 
     for i in range(len(sys.argv)):
         if 'tome' in sys.argv[i]:
@@ -162,13 +165,13 @@ def predict(fasta_file,model,means,stds,features,p):
 
 
 def predOGT(args):
-    infile = args.get('-fasta', None)
-    indir = args.get('-indir', None)
+    infile = args.get('fasta', None)
+    indir = args.get('indir', None)
 
-    if args.get('-o', None) is None: outf = sys.stdout
-    else: outf = open(args['-o'], 'w')
+    if args.get('o', None) is None: outf = sys.stdout
+    else: outf = open(args['o'], 'w')
 
-    p = int(args.get('-p',1))
+    p = int(args.get('p',1))
 
     model, means, stds, features = load_model()
     outf.write('FileName\tpredOGT (C)\n')
@@ -269,6 +272,8 @@ def parse_blastp_results(outdir,ec):
         cov = float(cont[3])/len(seq)*100
 
         blastRes[target] = (ident,cov,seq)
+    os.system('rm {0}'.format(blastfile))
+    os.system('rm {0}'.format(fastafile))
     return blastRes
 
 def get_info_for_selected_seqs(annofile,uniprot_ids,ec):
@@ -284,7 +289,7 @@ def get_info_for_selected_seqs(annofile,uniprot_ids,ec):
 
 def build_output(blastRes,seqInfo,outdir,seqfile):
     # two ouput files
-    # 1. a fasta file containing all target seqeunces plus query
+    # 1. a fasta file containing all target sequence plus query
     # 2. a excel file containts the information of the target
 
     query = SeqIO.to_dict(SeqIO.parse(seqfile,'fasta'))
@@ -298,8 +303,8 @@ def build_output(blastRes,seqInfo,outdir,seqfile):
     for id, rec in blastRes.items(): fhand.write('>{0}\n{1}\n'.format(id,rec[-1]))
 
     # build a dataframe and export it to excel file
-    #outcsv = os.path.join(outdir,query_id+'_homologs.tsv')
-    outexcel = os.path.join(outdir,query_id+'_homologs.xlsx')
+    outcsv = os.path.join(outdir,query_id+'_homologs.tsv')
+    #outexcel = os.path.join(outdir,query_id+'_homologs.xlsx')
 
     data = dict()
     cols = ['id','identity(%)','coverage(%)','domain','organism','source','growth_temp','sequence']
@@ -319,14 +324,15 @@ def build_output(blastRes,seqInfo,outdir,seqfile):
         data['sequence'] += [rec[2]]
 
     df = pd.DataFrame(data=data,columns=cols)
-    #df.to_csv(outcsv,sep='\t')
+    df.to_csv(outcsv,sep='\t')
 
-    writer = pd.ExcelWriter(outexcel)
-    df.to_excel(writer,'Sheet1')
-    writer.save()
+    #writer = pd.ExcelWriter(outexcel)
+    #df.to_excel(writer,'Sheet1')
+    #writer.save()
 
 
 def getEnzymes(args):
+
     fasta_link = 'https://zenodo.org/record/2530589/files/all_enzyme_sequences.fasta'
     anno_link = 'https://zenodo.org/record/2530589/files/enzyme_to_growth_temp_mapping.tsv'
 
@@ -334,13 +340,15 @@ def getEnzymes(args):
     ext_dir = os.path.join(path,'external_data/')
     if not os.path.exists(ext_dir): os.mkdir(ext_dir)
 
-    seqfile = args.get('-seq',None)
-    ec = args.get('-ec',None)
-    outdir = args.get('-outdir',None)
-    cpu_num = int(args.get('-p',1))
-    temps = args.get('-temp_range','-50,200')
+    seqfile = args.get('seq',None)
+    ec = args.get('ec',None)
+    outdir = args.get('outdir',None)
+    cpu_num = int(args.get('p',1))
+    try: temps = args['temp_range']
+    except:
+        sys.exit('Please specify --temp_range')
     temps = [float(item) for item in temps.split(',')]
-    evalue = args.get('-evalue','1e-10')
+    evalue = args.get('evalue','1e-10')
 
     if ec is None: sys.exit('Error: Please specify ec number.')
 
@@ -358,18 +366,18 @@ def getEnzymes(args):
     uniprot_ids = list(subdf.index)
     print_out('')
 
-    print_out('step 2: get seqeunces and saving sequences to fasta format')
+    print_out('step 2: get sequences and saving sequences to fasta format')
     dfseqs = build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir)
 
     dfec_out = pd.merge(subdf,dfseqs,left_index=True,right_index=True,how='inner')
 
-    subout = os.path.join(outdir,'{}_all.xlsx'.format(ec))
-    print_out('Saving results to excel format')
-    writer = pd.ExcelWriter(subout)
-    dfec_out.to_excel(writer,'Sheet1')
-    writer.save()
+    if seqfile is None:
+        subout = os.path.join(outdir,'{}_all.tsv'.format(ec))
+        print_out('Saving results to tab-seperated format')
+        dfec_out.to_csv(subout,sep='\t')
+        sys.exit('Done!')
 
-    if seqfile is None: sys.exit('Done!')
+
     print_out('step 3: run blastp')
     run_blastp(ec,seqfile,cpu_num,outdir,evalue)
 
@@ -388,21 +396,21 @@ def getEnzymes(args):
 def main():
     args = parse_args()
 
-    if args.get('-help',None) is not None and args.get('method',None) is None:
+    if args.get('help',None) is not None and args.get('method',None) is None:
         help_msg = '''
         Tome (Temperature optima for microorganisms and enzymes) is an open
         source suite for two purposes:
         (1) predict the optimal growth temperature from proteome sequences
-        (2) get homologue enzymes for a given ec number with/without a seqeunce
+        (2) get homologue enzymes for a given ec number with/without a sequence
 
         Tome Version 1.1 (built on Nov 23 2018)
 
         Main tools:
             predOGT     Predict optimal growth temperature(s) for one/many microorganisms
-            getEnzymes  Get homologue enzymes for a given ec number with/without a seqeunce
+            getEnzymes  Get homologue enzymes for a given ec number with/without a sequence
 
-        A detailed list of options can be obtained by calling 'tome predOGT -help'for
-        predOGT or 'tome getEnzymes -help' for getEnzymes
+        A detailed list of options can be obtained by calling 'tome predOGT --help'for
+        predOGT or 'tome getEnzymes --help' for getEnzymes
 
         Gang Li
         2018-11-23
@@ -410,41 +418,53 @@ def main():
         sys.exit(help_msg)
 
     if args['method'] == 'predOGT':
-        if args.get('-help',None) is not None or len(args)<1:
+        # check arguments and run the method
+        all_args = ['fasta','indir','o','p','method','h','help','train']
+        for arg in args.keys():
+            if arg not in all_args:
+                sys.exit('Unknown argument: {0}'.format(arg))
+
+        if args.get('help',None) is not None or len(args)<1:
             help_msg = '''
         Usage:
         tome predOGT [Options]
 
         Options:
-            -fasta  input fasta file containing all protein seqeunces of a proteome.
+            --fasta input fasta file containing all protein sequence of a proteome.
                     Required for the prediction of OGT for one microorganism
-            -indir  directory that contains a list of fasta files. Each fasta file
+            --indir directory that contains a list of fasta files. Each fasta file
                     is a proteome. Required for the prediction of OGT for a list of
                     microorganisms. Important: Fasta file names much endswith .fasta
+            --train train the model again.
             -o      out file name, default: print on the terminal
             -p      number of threads, default is 1. if set to 0, it will use all cpus
                     available.
 
             '''
             sys.exit(help_msg)
-        elif args.get('-train',None) is not None: train_model()
-        else:predOGT(args)
+        elif args.get('train',None) is not None: train_model()
+        else: predOGT(args)
 
     elif args['method'] == 'getEnzymes':
+        all_args = ['ec','seq','temp_range','outdir','p','method','h','help','evalue']
+        for arg in args.keys():
+            if arg not in all_args:
+                sys.exit('Unknown argument: {0}'.format(arg))
+
         if args.get('-help',None) is not None:
             help_msg = '''
         Usage:
         tome getEnzymes [Options]
 
         Options:
-            -ec          EC number. Required. 1.1.1.1, for instance
-            -seq         input fasta file which contains the sequence of the query enzyme. Optional
-            -temp_range  the temperature range that target enzymes should be in. For example: 50,100
+            --ec         EC number. Required. 1.1.1.1, for instance
+            --seq        input fasta file which contains the sequence of the query enzyme. Optional
+            --temp_range the temperature range that target enzymes should be in. For example: 50,100
                          50 is lower bound and 100 is upper bound of the temperature. Default -50,200
-            -outdir      directory for ouput files. Default is current working folder.
+            --outdir     directory for ouput files. Default is current working folder.
             -p           number of threads, default is 1. if set to 0, it will use all cpus
                          available.
-            -evalue      evalue used in ncbi blastp. Default is 1e-10
+            --evalue     evalue used in ncbi blastp. Default is 1e-10
 
             '''
             sys.exit(help_msg)
