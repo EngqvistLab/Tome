@@ -4,7 +4,7 @@ Tome (Temperature optima for microorganisms and enzymes) is an open source suite
   * get homologue enzymes for a given ec number with/without a sequence
 
 ## System
-* Mac OS
+* macOS
 * Linux
 
 ## Installation
@@ -41,7 +41,7 @@ tome predOGT --fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
 Then you will get following results:<br/>
 ```
 FileName	predOGT (C)
-95_pyrococcus_horikoshii_archaea.fasta	94.0
+pyrococcus_horikoshii.fasta	94.0
 ```
 
 #### 1.2 Predict optimal growth temperatures for a list of microorganisms. Fasta files must end with .fasta
@@ -52,9 +52,9 @@ Then you will get an tab-seperated output file predicted_ogt.tsv with following
 contents:<br/>
 ```
 FileName	predOGT (C)
-38_succinivibrio_dextrinosolvens_bacteria.fasta	38.27
-95_pyrococcus_horikoshii_archaea.fasta	94.0
-69_caldanaerobacter_subterraneus_bacteria.fasta	70.0
+succinivibrio_dextrinosolvens.fasta	38.27
+pyrococcus_horikoshii.fasta	94.0
+caldanaerobacter_subterraneus.fasta	70.0
 ```
 #### 1.3 train the model
 In case there would be some warnings due to the versions of sklearn when loading
@@ -68,7 +68,7 @@ A new model has beed successfully trained.
 Model performance:
         RMSE: 2.159489340036136
           r2: 0.9552614628185572
-  Pearsnon r:(0.9775886084277753, 0.0)
+  Pearson r:(0.9775886084277753, 0.0)
   Spearman r:SpearmanrResult(correlation=0.93331975456613, pvalue=0.0)
 
 Saving the new model to replace the original one...
@@ -82,6 +82,8 @@ higher 50 °C.
 ```linux
 tome getEnzymes --ec 3.2.1.1 --temp_range 50,200 --outdir test/enzyme_without_seq/
 ```
+The first time this command is run two files totaling ~2.5 GB will be downloaded from the Zenodo data repository. These files contain the enzyme annotation data.
+
 Two output files will be generated: test/enzyme_without_seq/3.2.1.1_all.fasta and
 test/enzyme_without_seq/3.2.1.1_all.tsv
 3.2.1.1_all.fasta contains all sequences for this EC number. This can be used for
