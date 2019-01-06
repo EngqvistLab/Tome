@@ -458,9 +458,9 @@ def main():
 
         Options:
             --ec         EC number. Required. 1.1.1.1, for instance
-            --seq        input fasta file which contains the sequence of the query enzyme. Optional
             --temp_range the temperature range that target enzymes should be in. For example: 50,100
-                         50 is lower bound and 100 is upper bound of the temperature. Default -50,200
+                         50 is lower bound and 100 is upper bound of the temperature.
+            --seq        input fasta file which contains the sequence of the query enzyme. Optional
             --outdir     directory for ouput files. Default is current working folder.
             -p           number of threads, default is 1. if set to 0, it will use all cpus
                          available.
