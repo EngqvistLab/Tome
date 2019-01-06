@@ -60,7 +60,7 @@ caldanaerobacter_subterraneus.fasta	70.0
 In case there would be some warnings due to the versions of sklearn when loading
 the model, one can use following command to train the model again:
 ```linux
-tome predOGT -train
+tome predOGT --train
 ```
 Expected output after training is
 ```
@@ -132,9 +132,9 @@ In this test case, 13 homologs with a temperature optima higher than 50 °C were
 ## Help:
 Use following commands you can get detailed information about the arguments of tome.
 ```linux
-tome --help
-tome predOGT --help
-tome getEnzymes --help
+tome --help/-h
+tome predOGT --help/-h
+tome getEnzymes --help/-h
 ```
 Or you can directly contact
 Martin Engqvist: <martin.engqvist@chalmers.se> or Gang Li: <gangl@chalmers.se><br/>
