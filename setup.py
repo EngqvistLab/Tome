@@ -22,8 +22,8 @@ setup(
     package_data={'tome':['data/train.csv',
 						  'model/OGT_svr.f',
 						  'model/OGT_svr.pkl',
-						  'external_data/enzyme_to_growth_temp_mapping.tsv',
-						  'external_data/all_enzyme_sequences.fasta']},
+						  'external_data/enzyme_ogt_topt.tsv',
+						  'external_data/brenda_seqeunces_20180109.fasta']},
 	license='GPLv3+',
 	classifiers=[
 	# How mature is this project? Common values are

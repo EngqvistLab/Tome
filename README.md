@@ -1,7 +1,9 @@
 # Tome: Temperature optima for microorgianisms and enzymes
-Tome (Temperature optima for microorganisms and enzymes) is an open source suite for two fundamental applications:
+Tome (Temperature optima for microorganisms and enzymes) is an open source suite
+for two fundamental applications:
   * predict the optimal growth temperature from proteome sequences
-  * get homologue enzymes for a given ec number with/without a sequence
+  * get homologue enzymes for a given ec number with/without a sequence that have
+  a temperature optima in a specified range.
 
 ## System
 * macOS
@@ -80,7 +82,7 @@ Done!
 For example, we want to get the enzymes with EC 3.2.1.1 with a temperature optima
 higher 50 °C.
 ```linux
-tome getEnzymes --ec 3.2.1.1 --temp_range 50,200 --outdir test/enzyme_without_seq/
+tome getEnzymes --ec 3.2.1.1 --temp_range 50,200 --data_type Topt --outdir test/enzyme_without_seq/
 ```
 The first time this command is run two files totaling ~2.5 GB will be downloaded from the Zenodo data repository. These files contain the enzyme annotation data.
 
@@ -92,9 +94,18 @@ enzyme_without_seq/3.2.1.1_all.tsv contains following columns:
 * uniprot id
 * domain: Domain information of source organism (Archaea/Bacteria/Eukaryote)
 * organism: name of source organism
-* source: if the growth temperature is predicted or experimentally determined
-* growth_temp: optimal growth temperature of source organism
+* ogt: optimal growth temperature of source organism
+* ogt_source: if the growth temperature is predicted or experimentally determined
+* topt: temperature optima of the enzyme
+* topt_source: if topt is predicted or experimentally determined
 * seqeunce: protein sequence
+
+One can also use following command to find enzymes from organisms with a OGT fall
+into the temperature range specified with --temp_range. The output files have the same
+format as above described.
+````linux
+tome getEnzymes --ec 3.2.1.1 --temp_range 50,200 --data_type OGT --outdir test/enzyme_without_seq/
+```
 
 #### 2.2 Get homologous enzymes for an given ec number and sequence.
 For example, we want to get all homologs of an enzyme with EC 3.2.1.1
@@ -112,22 +123,31 @@ DLLVFSRGHSGIVAINKGKTAVCYKLPAKYSEQDHTEIKEVINMEGVKLSPPSLSTEAGVILQLPAQSCAMLMV
 There should be only one sequence in the fasta file. If more than 1 sequence is provided,
 only the first sequence would be used.
 ```linux
-tome getEnzymes --seq test/enzyme_with_seq/test.fasta --ec 3.2.1.1 --temp_range 50,200 --outdir test/enzyme_with_seq/
+tome getEnzymes --seq test/enzyme_with_seq/test.fasta --ec 3.2.1.1 --temp_range 50,200 --data_type Topt --outdir test/enzyme_with_seq/
 ```
 Two output files will be created:
 * Q1Z0D7_homologs.fasta: a fasta file which contains sequences for all homologs of query enzyme
 * Q1Z0D7_homologs.tsv: a tab-seperated file with following columns:
   * uniprot id
-  * Identity(%) from blast
-  * Coverage(%) from blast
   * domain: Domain information of source organism (Archaea/Bacteria/Eukaryote)
   * organism: name of source organism
-  * source: if the growth temperature is predicted or experimentally determined
-  * growth_temp: optimal growth temperature of source organism
-  * sequence: protein sequence
+  * ogt: optimal growth temperature of source organism
+  * ogt_source: if the growth temperature is predicted or experimentally determined
+  * topt: temperature optima of the enzyme
+  * topt_source: if topt is predicted or experimentally determined
+  * Identity(%) from blast
+  * Coverage(%) from blast
+  * seqeunce: protein sequence
 
-In this test case, 13 homologs with a temperature optima higher than 50 °C were found.
+In this test case, 44 homologs with a temperature optima higher than 50 °C were found.
 
+One can also use following command to find homologous enzymes from organisms with a OGT fall
+into the temperature range specified with --temp_range. The output files have the same
+format as above described.
+```linux
+tome getEnzymes --seq test/enzyme_with_seq/test.fasta --ec 3.2.1.1 --temp_range 50,200 --data_type OGT --outdir test/enzyme_with_seq/
+```
+In this case, 13 homologs from organisms with a OGT higher than 50 °C were found
 
 ## Help:
 Use following commands you can get detailed information about the arguments of tome.

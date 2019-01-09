@@ -212,14 +212,17 @@ def download_external_data(link):
         #subprocess.call(['curl {0} -o {}'.format(link,file_name)])
 
 
-def get_enzymes_of_ec(ec,annofile,temps,outdir):
-    df = pd.read_csv(annofile,index_col=0,sep='\t')
+def get_enzymes_of_ec(ec,dfanno,temps,data_type):
+    df = dfanno
     subdf = df.loc[ec,:]
     print_out('{0} sequences were found for {1}'.format(subdf.shape[0],ec))
 
+    for i in range(len(df.columns)):
+        if data_type.lower() == df.columns[i]: col_ind = i
+
     data = subdf.values
-    data = data[data[:,-1]>temps[0],:]
-    data = data[data[:,-1]<temps[1],:]
+    data = data[data[:,col_ind]>temps[0],:]
+    data = data[data[:,col_ind]<temps[1],:]
 
     index = pd.Index(data[:,0],name=df.columns[0])
     subdf = pd.DataFrame(data=data[:,1:],columns=df.columns[1:],index=index)
@@ -276,18 +279,19 @@ def parse_blastp_results(outdir,ec):
     os.system('rm {0}'.format(fastafile))
     return blastRes
 
-def get_info_for_selected_seqs(annofile,uniprot_ids,ec):
-    df = pd.read_csv(annofile,index_col=0,sep='\t')
+def get_info_for_selected_seqs(dfanno,uniprot_ids,ec):
+    df = dfanno
     subdf = df.loc[ec,:]
     seqInfo = dict()
+    # seqInfo = {uniprot_id:[domain,..,topt_source]}
     data = subdf.values
     for i in range(data.shape[0]):
         id = data[i,0]
-        seqInfo[id] = [data[i,j+1] for j in range(4)]
+        seqInfo[id] = [data[i,j] for j in range(data.shape[1])]
     return seqInfo
 
 
-def build_output(blastRes,seqInfo,outdir,seqfile):
+def build_output(blastRes,seqInfo,outdir,seqfile,dfanno):
     # two ouput files
     # 1. a fasta file containing all target sequence plus query
     # 2. a excel file containts the information of the target
@@ -307,20 +311,18 @@ def build_output(blastRes,seqInfo,outdir,seqfile):
     #outexcel = os.path.join(outdir,query_id+'_homologs.xlsx')
 
     data = dict()
-    cols = ['id','identity(%)','coverage(%)','domain','organism','source','growth_temp','sequence']
+    cols = list(dfanno.columns) + ['identity(%)','coverage(%)','sequence']
+    #cols = ['id','identity(%)','coverage(%)','domain','organism','source','growth_temp','sequence']
     # first line is for query
-    data['id'] = [query_id]
+    data['uniprot_id'] = ['query']
     for col in cols[1:-1]: data[col] = [None]
     data['sequence'] = [query_seq]
 
     for id,rec in blastRes.items():
-        data['id'] += [id]
+        for i in range(len(dfanno.columns)): data[dfanno.columns[i]] += [seqInfo[id][i]]
+
         data['identity(%)'] += [rec[0]]
         data['coverage(%)'] += [rec[1]]
-        data['domain'] += [seqInfo[id][0]]
-        data['organism'] += [seqInfo[id][1]]
-        data['source'] += [seqInfo[id][2]]
-        data['growth_temp'] += [seqInfo[id][3]]
         data['sequence'] += [rec[2]]
 
     df = pd.DataFrame(data=data,columns=cols)
@@ -344,6 +346,10 @@ def getEnzymes(args):
     ec = args.get('ec',None)
     outdir = args.get('outdir',None)
     cpu_num = int(args.get('p',1))
+    data_type = args.get('data_type','Topt')
+    if data_type not in ['OGT','Topt']:
+        sys.exit('Please check your --data_type option. Only OGT and Topt are supported')
+
     try: temps = args['temp_range']
     except:
         sys.exit('Please specify --temp_range')
@@ -355,14 +361,15 @@ def getEnzymes(args):
     if outdir is None: outdir = './'
     if not os.path.exists(outdir): os.mkdir(outdir)
 
-    annofile = os.path.join(ext_dir,'enzyme_to_growth_temp_mapping.tsv')
-    brenda_seq_file = os.path.join(ext_dir,'all_enzyme_sequences.fasta')
+    annofile = os.path.join(ext_dir,'enzyme_ogt_topt.tsv')
+    brenda_seq_file = os.path.join(ext_dir,'brenda_seqeunces_20180109.fasta')
 
     if not os.path.isfile(annofile): download_external_data(anno_link)
     if not os.path.isfile(brenda_seq_file): download_external_data(fasta_link)
 
+    dfanno = pd.read_csv(annofile,index_col=0,sep='\t')
     print_out('step 1: get all uniprot ids with the given ec number')
-    subdf = get_enzymes_of_ec(ec,annofile,temps,outdir)
+    subdf = get_enzymes_of_ec(ec,dfanno,temps,data_type)
     uniprot_ids = list(subdf.index)
     print_out('')
 
@@ -382,12 +389,12 @@ def getEnzymes(args):
     run_blastp(ec,seqfile,cpu_num,outdir,evalue)
 
     print_out('step 4: get info of hits')
-    seqInfo = get_info_for_selected_seqs(annofile,uniprot_ids,ec)
+    seqInfo = get_info_for_selected_seqs(dfanno,uniprot_ids,ec)
     blastRes = parse_blastp_results(outdir,ec)
     print_out('{0} homologues were found by blast'.format(len(blastRes)))
 
     print_out('step 5: save results')
-    build_output(blastRes,seqInfo,outdir,seqfile)
+    build_output(blastRes,seqInfo,outdir,seqfile,dfanno)
     print_out('Done!')
 
     dbfile = os.path.join(outdir,'db')
@@ -446,7 +453,7 @@ def main():
         else: predOGT(args)
 
     elif args['method'] == 'getEnzymes':
-        all_args = ['ec','seq','temp_range','outdir','p','method','h','help','evalue']
+        all_args = ['ec','seq','temp_range','outdir','p','method','h','help','evalue','data_type']
         for arg in args.keys():
             if arg not in all_args:
                 sys.exit('Unknown argument: {0}'.format(arg))
@@ -458,9 +465,16 @@ def main():
 
         Options:
             --ec         EC number. Required. 1.1.1.1, for instance
-            --temp_range the temperature range that target enzymes should be in. For example: 50,100
-                         50 is lower bound and 100 is upper bound of the temperature.
-            --seq        input fasta file which contains the sequence of the query enzyme. Optional
+            --temp_range the temperature range that target enzymes should be in.
+                         For example: 50,100. 50 is lower bound and 100 is upper
+                         bound of the temperature.
+            --data_type  [OGT or Topt], If OGT, Tome will find enzymes whose OGT
+                         of its source organims fall into the temperature range
+                         specified by --temp_range. If Topt, Tome will find enzymes
+                         whose Topt  fall into the temperature range specified
+                         by --temp_range. Default is Topt
+            --seq        input fasta file which contains the sequence of the query
+                         enzyme. Optional
             --outdir     directory for ouput files. Default is current working folder.
             -p           number of threads, default is 1. if set to 0, it will use all cpus
                          available.
