@@ -103,7 +103,7 @@ enzyme_without_seq/3.2.1.1_all.tsv contains following columns:
 One can also use following command to find enzymes from organisms with a OGT fall
 into the temperature range specified with --temp_range. The output files have the same
 format as above described.
-````linux
+```linux
 tome getEnzymes --ec 3.2.1.1 --temp_range 50,200 --data_type OGT --outdir test/enzyme_without_seq/
 ```
 
