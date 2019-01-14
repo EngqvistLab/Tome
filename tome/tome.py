@@ -335,8 +335,8 @@ def build_output(blastRes,seqInfo,outdir,seqfile,dfanno):
 
 def getEnzymes(args):
 
-    fasta_link = 'https://zenodo.org/record/2530589/files/all_enzyme_sequences.fasta'
-    anno_link = 'https://zenodo.org/record/2530589/files/enzyme_to_growth_temp_mapping.tsv'
+    fasta_link = 'https://zenodo.org/record/2539114/files/brenda_sequences_20180109.fasta'
+    anno_link = 'https://zenodo.org/record/2539114/files/enzyme_ogt_topt.tsv'
 
     path = os.path.dirname(os.path.realpath(__file__))
     ext_dir = os.path.join(path,'external_data/')
