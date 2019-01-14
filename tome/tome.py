@@ -362,7 +362,7 @@ def getEnzymes(args):
     if not os.path.exists(outdir): os.mkdir(outdir)
 
     annofile = os.path.join(ext_dir,'enzyme_ogt_topt.tsv')
-    brenda_seq_file = os.path.join(ext_dir,'brenda_seqeunces_20180109.fasta')
+    brenda_seq_file = os.path.join(ext_dir,'brenda_sequences_20180109.fasta')
 
     if not os.path.isfile(annofile): download_external_data(anno_link)
     if not os.path.isfile(brenda_seq_file): download_external_data(fasta_link)

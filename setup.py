@@ -23,7 +23,7 @@ setup(
 						  'model/OGT_svr.f',
 						  'model/OGT_svr.pkl',
 						  'external_data/enzyme_ogt_topt.tsv',
-						  'external_data/brenda_seqeunces_20180109.fasta']},
+						  'external_data/brenda_sequences_20180109.fasta']},
 	license='GPLv3+',
 	classifiers=[
 	# How mature is this project? Common values are
