@@ -38,7 +38,7 @@ There is a folder named 'test' in the package. One can use the instructions in
 ### 1. Prediction of optimal growth temperature
 #### 1.1 Prediction of optimal growth temperature for one microorganism
 ```linux
-tome predOGT --fasta test/proteomes/95_pyrococcus_horikoshii_archaea.fasta
+tome predOGT --fasta test/proteomes/pyrococcus_horikoshii.fasta
 ```
 Then you will get following results:<br/>
 ```
@@ -78,7 +78,7 @@ Done!
 ```
 
 ### 2. Get enzyme sequences
-The first time this command is run two files totaling ~2.5 GB will be downloaded from the Zenodo data repository (https://zenodo.org/record/2539114#.XDyAUc_0l0s). These files contain the enzyme annotation data. 
+The first time this command is run two files totaling ~2.5 GB will be downloaded from the Zenodo data repository (https://zenodo.org/record/2539114#.XDyAUc_0l0s). These files contain the enzyme annotation data.
 #### 2.1 Get enzymes for a given ec number.
 For example, we want to get the enzymes with EC 3.2.1.1 with a temperature optima
 higher 50 °C.
