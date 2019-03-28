@@ -1,4 +1,4 @@
-# Tome: Temperature optima for microorgianisms and enzymes
+# Tome: Temperature optima for microorganisms and enzymes
 Tome (Temperature optima for microorganisms and enzymes) is an open source suite
 for two fundamental applications:
   * predict the optimal growth temperature from proteome sequences
