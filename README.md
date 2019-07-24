@@ -4,9 +4,9 @@ for two fundamental applications:
   * predict the optimal growth temperature from proteome sequences
   * get homologue enzymes for a given ec number with/without a sequence that have
   a temperature optima in a specified range.
-  
+
 ## Citation
-Li, G., Rabe, K. S., Nielsen, J. & Engqvist, M. K. M. Machine learning applied to predicting microorganism growth temperatures and enzyme catalytic optima. bioRxiv (2018). doi:10.1101/522342
+Li, G., Rabe, K. S., Nielsen, J., & Engqvist, M. K. M. (2019). Machine learning applied to predicting microorganism growth temperatures and enzyme catalytic optima. ACS Synthetic Biology, 8, 1411–1420.
 
 ## System
 * macOS
