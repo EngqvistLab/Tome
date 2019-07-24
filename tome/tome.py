@@ -20,11 +20,16 @@ import sys
 import os
 import pandas as pd
 from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.Alphabet import IUPAC
 from sklearn.externals import joblib
 from collections import Counter
 from multiprocessing import Pool, cpu_count
 import numpy as np
 import subprocess
+import sqlite3
+import argparse
 
 
 # Esimtation of OGT for organism(s)
@@ -182,38 +187,29 @@ def predict(fasta_file,model,means,stds,features,p):
 
 
 def predOGT(args):
-    infile = args.get('fasta', None)
-    indir = args.get('indir', None)
+    infile = args.fasta
+    indir = args.indir
 
-    if args.get('o', None) is None: outf = sys.stdout
-    else: outf = open(args['o'], 'w')
-
-    p = int(args.get('p',1))
+    outf = args.out
 
     model, means, stds, features = load_model()
     outf.write('FileName\tpredOGT (C)\n')
 
     if infile is not None:
-        pred_ogt = predict(infile,model,means,stds,features,p)
+        pred_ogt = predict(infile,model,means,stds,features,args.threads)
         outf.write('{0}\t{1}\n'.format(infile.split('/')[-1], pred_ogt))
 
-    else:
+    elif indir is not None:
         for name in os.listdir(indir):
             if name.startswith('.'): continue
             if not name.endswith('.fasta'): continue
-            pred_ogt = predict(os.path.join(indir,name),model,means,stds,features,p)
+            pred_ogt = predict(os.path.join(indir,name),model,means,stds,features,args.threads)
             outf.write('{0}\t{1}\n'.format(name, pred_ogt))
+    else: sys.exit('Please provide at least a fasta file or a directory that contains \
+    a list of fasta files')
+    outf.close()
 
 ################################################################################
-
-
-
-
-# Find homologues for a given enzyme with the same ec number
-################################################################################
-
-# to be completed
-# external_data/
 
 def download_external_data(link):
     realpath = os.path.dirname(os.path.realpath(__file__))
@@ -228,285 +224,282 @@ def download_external_data(link):
         subprocess.call(['curl',link,'-o',file_name])
         #subprocess.call(['curl {0} -o {}'.format(link,file_name)])
 
+def build_df_from_fetch(cursor):
+    # cursor: which has executed a SELECT command
 
-def get_enzymes_of_ec(ec,dfanno,temps,data_type):
-    df = dfanno
-    subdf = df.loc[ec,:]
-    print_out('{0} sequences were found for {1}'.format(subdf.shape[0],ec))
+    data = cursor.fetchall()
+    cursor.execute('PRAGMA TABLE_INFO(annotation)')
 
-    for i in range(len(df.columns)):
-        if data_type.lower() == df.columns[i]: col_ind = i
+    columns = [item[1] for item in cursor.fetchall()]
+    df = pd.DataFrame(data=data,columns=columns)
+    df = df.set_index('id',drop=False)
+    return df
 
-    data = subdf.values
-    data = data[data[:,col_ind]>temps[0],:]
-    data = data[data[:,col_ind]<temps[1],:]
 
-    index = pd.Index(data[:,0],name=df.columns[0])
-    subdf = pd.DataFrame(data=data[:,1:],columns=df.columns[1:],index=index)
-    print_out('{0} sequences were found between {1}'.format(subdf.shape[0],temps))
+def select_based_on_class_id(cursor,class_id,class_column,target_column,temps):
+    '''
+    cursor:        cursor of the sql database which contains all annotation of enzymes
+    class_id:      ec number for BRENDA and family id for CAZy
+    class_column:  the column name of sequence id. 'ec' for BRENDA and 'family' for
+                   CZAy
+    target_column: the column name of temperature to be used. Either 'topt' or 'ogt'
+    temps:         a list that contains lower and upper bound of temperatures
 
-    return subdf
+    return a dataframe with selected enzymes
+    '''
 
-def build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir):
-    is_target = dict()
-    for id in uniprot_ids: is_target[id] = True
+    if class_column == 'ec':
+        cmd = '''
+                SELECT * FROM annotation
+                WHERE {0} = '{1}' AND {2} > {3} AND {2} < {4}
+        '''.format(class_column,class_id,target_column,temps[0],temps[1])
+    if class_column == 'family':
+        cmd = '''
+                SELECT * FROM annotation
+                WHERE {0} LIKE '%{1}%' AND {2} > {3} AND {2} < {4};
+        '''.format(class_column,class_id,target_column,temps[0],temps[1])
 
-    outfafile = os.path.join(outdir,'{0}_all.fasta'.format(ec))
-    fhand = open(outfafile,'w')
+    cursor.execute(cmd)
 
-    subseqs,ids = [],[]
-    for rec in SeqIO.parse(brenda_seq_file,'fasta'):
-        if not is_target.get(rec.id,False): continue
-        fhand.write('>{0}\n{1}\n'.format(rec.id,rec.seq))
-        subseqs.append(rec.seq)
-        ids.append(rec.id)
+    df = build_df_from_fetch(cursor)
+    print('{0} enzymes were selected\n'.format(df.shape[0]))
+    return df
 
+def build_fasta_from_dataframe(df,class_id,seqid_column,outfasta):
+    '''
+    df is a dataframe with all annotations of enzymes.
+    class_id:      ec number for BRENDA and family id for CAZy
+    seqid_column:  the column name of sequence id. 'uniprot_id' for BRENDA and 'genbank'
+                   for CAZy
+    outfasta: output file
+
+    output file have a format of class_id.fasta
+    '''
+    print('Build a fasta file for selected enzymes:')
+
+    fhand = open(outfasta,'w')
+
+    for ind in df.index:
+        record = SeqRecord(Seq(df.loc[ind,'sequence'],
+                       IUPAC.protein),
+                   id=df.loc[ind,seqid_column], name="",
+                   description="")
+        SeqIO.write([record],fhand,'fasta')
+        #fhand.write('>{0}\n{1}\n'.format(df.loc[ind,seqid_column],df.loc[ind,'sequence']))
     fhand.close()
-    dfseqs = pd.DataFrame(data={'sequence':subseqs},index=ids)
-    return dfseqs
+    print(outfasta,'\n')
 
-def run_blastp(ec,seqfile,cpu_num,outdir,evalue):
-    dbseq = os.path.join(outdir,'{0}_all.fasta'.format(ec))
+def check_input_fasta(seqfile):
+    '''
+    Check if there is only one squence provided, if not produce a new fasta with
+    the first sequence.
+
+    '''
+    seqs = [rec for rec in SeqIO.parse(seqfile,'fasta')]
+    if len(seqs) == 1: new_seqfile = seqfile
+    else:
+        print('Warning: there are more than one query sequence provided. Only the first sequence will be used.')
+        new_seqfile = seqfile+'.first.fasta'
+        fhand = open(new_seqfile,'w')
+        SeqIO.write([seqs[0]],fhand,'fasta')
+        fhand.close()
+    return new_seqfile
+
+
+def run_blastp(class_id,seqfile,cpu_num,outdir,evalue):
+    '''
+    class_id:     ec number for BRENDA and family id for CAZy
+    seqfile:      a fasta file that contains the query seqeunce. Only one sequence
+                  is allowed. If multiple sequences provided, only the first one
+                  would be used
+    cpu_num:      number of threads
+    outdir:       output directory
+    evalue:       evalue cut-off used in blastp
+
+    '''
+    dbseq = os.path.join(outdir,'{0}_all.fasta'.format(class_id))
     db = os.path.join(outdir,'db')
-    out = os.path.join(outdir,'blast_{}.tsv'.format(ec))
+    out = os.path.join(outdir,'blast_{}.tsv'.format(class_id))
 
     cmd = '''makeblastdb -dbtype prot -in {0} -out {1}
     blastp -query {2} -db {1} -outfmt 6 -num_threads {3} -out {4} -evalue {5} -max_hsps 1
 
     '''.format(dbseq,db,seqfile,cpu_num,out,evalue)
-
+    print('Running blastp:')
     os.system(cmd)
+    os.system('rm {0}*'.format(db))
 
-def parse_blastp_results(outdir,ec):
-    blastRes = dict()
-    # blastRes = {uniprot_id:(ident,coverage,seq)}
-    blastfile = os.path.join(outdir,'blast_{}.tsv'.format(ec))
-    fastafile = os.path.join(outdir,'{}_all.fasta'.format(ec))
-    seqs = SeqIO.to_dict(SeqIO.parse(fastafile,'fasta'))
+
+def select_based_on_blast(df,class_id,seqid_column,outdir):
+    '''
+    df:            a data frame with selected enzymes based on class id and temperature range.
+                   the index columns is id
+    class_id:      ec number for BRENDA and family id for CAZy
+    class_column:  the column name of sequence id. 'ec' for BRENDA and 'family' for
+                   CZAy
+    outdir:        output directory
+    return a dataframe with three more columns: identity,coverage,evalue
+    '''
+    df = df.set_index(seqid_column,drop=False)
+
+    blastRes = list()
+    index = list()
+    # blastRes = [ident,coverage,seq]
+    # index = [seq_ids]
+    blastfile = os.path.join(outdir,'blast_{}.tsv'.format(class_id))
 
     for line in open(blastfile):
         cont = line.split()
         target = cont[1]
         ident = float(cont[2])
-        seq = seqs[target].seq
+        seq = df.loc[target,'sequence']
         cov = float(cont[3])/len(seq)*100
+        eval = float(cont[-2])
 
-        blastRes[target] = (ident,cov,seq)
+        blastRes.append([ident,cov,eval])
+        index.append(target)
+
     os.system('rm {0}'.format(blastfile))
-    os.system('rm {0}'.format(fastafile))
-    return blastRes
+    dfblast = pd.DataFrame(data=blastRes,index=index,columns=['identity(%)','coverage(%)','evalue'])
 
-def get_info_for_selected_seqs(dfanno,uniprot_ids,ec):
-    df = dfanno
-    subdf = df.loc[ec,:]
-    seqInfo = dict()
-    # seqInfo = {uniprot_id:[domain,..,topt_source]}
-    data = subdf.values
-    for i in range(data.shape[0]):
-        id = data[i,0]
-        seqInfo[id] = [data[i,j] for j in range(data.shape[1])]
-    return seqInfo
+    dfmerged = pd.merge(df,dfblast,left_index=True,right_index=True,how='inner')
+    print('{0} enzymes were selected'.format(dfmerged.shape[0]))
+    dfmerged = dfmerged.set_index('id')
+    return dfmerged
 
-
-def build_output(blastRes,seqInfo,outdir,seqfile,dfanno):
-    # two ouput files
-    # 1. a fasta file containing all target sequence plus query
-    # 2. a excel file containts the information of the target
-
-    query = SeqIO.to_dict(SeqIO.parse(seqfile,'fasta'))
-    query_id = list(query.keys())[0]
-    query_seq = query[query_id].seq
-
-    # write the fasta file
-    outfasta = os.path.join(outdir,query_id+'_homologs.fasta')
-    fhand = open(outfasta,'w')
-    fhand.write('>{0}\n{1}\n'.format(query_id,query_seq))
-    for id, rec in blastRes.items(): fhand.write('>{0}\n{1}\n'.format(id,rec[-1]))
-
-    # build a dataframe and export it to excel file
-    outcsv = os.path.join(outdir,query_id+'_homologs.tsv')
-    #outexcel = os.path.join(outdir,query_id+'_homologs.xlsx')
-
-    data = dict()
-    cols = list(dfanno.columns) + ['identity(%)','coverage(%)','sequence']
-    #cols = ['id','identity(%)','coverage(%)','domain','organism','source','growth_temp','sequence']
-    # first line is for query
-    data['uniprot_id'] = ['query']
-    for col in cols[1:-1]: data[col] = [None]
-    data['sequence'] = [query_seq]
-
-    for id,rec in blastRes.items():
-        for i in range(len(dfanno.columns)): data[dfanno.columns[i]] += [seqInfo[id][i]]
-
-        data['identity(%)'] += [rec[0]]
-        data['coverage(%)'] += [rec[1]]
-        data['sequence'] += [rec[2]]
-
-    df = pd.DataFrame(data=data,columns=cols)
-    df.to_csv(outcsv,sep='\t')
-
-    #writer = pd.ExcelWriter(outexcel)
-    #df.to_excel(writer,'Sheet1')
-    #writer.save()
+def check_database(args,params):
+    realpath = os.path.dirname(os.path.realpath(__file__))
+    dbfile = os.path.join(realpath,params['dbfiles'][args.database])
+    if not os.path.isfile(dbfile):
+        download_external_data(params['dblinks'][args.database])
 
 
-def getEnzymes(args):
+def getEnzymes(args,**params):
 
-    fasta_link = 'https://zenodo.org/record/2539114/files/brenda_sequences_20180109.fasta'
-    anno_link = 'https://zenodo.org/record/2539114/files/enzyme_ogt_topt.tsv'
-
+    check_database(args,params)
+    class_column = params['class_column'][args.database]
+    seqid_column = params['seqid_column'][args.database]
     path = os.path.dirname(os.path.realpath(__file__))
-    ext_dir = os.path.join(path,'external_data/')
-    if not os.path.exists(ext_dir): os.mkdir(ext_dir)
+    dbfile = os.path.join(path,params['dbfiles'][args.database])
+    conn = sqlite3.connect(dbfile)
+    cursor = conn.cursor()
 
-    seqfile = args.get('seq',None)
-    ec = args.get('ec',None)
-    outdir = args.get('outdir',None)
-    cpu_num = int(args.get('p',1))
-    data_type = args.get('data_type','Topt')
-    if data_type not in ['OGT','Topt']:
-        sys.exit('Please check your --data_type option. Only OGT and Topt are supported')
+    print('''
+        Step 1: Select enzymes from {0} with given {1} as {2} and with a {3} between {4}
+    '''.format(args.database,seqid_column,args.class_id,args.data_type,args.temp_range))
 
-    try: temps = args['temp_range']
-    except:
-        sys.exit('Please specify --temp_range')
-    temps = [float(item) for item in temps.split(',')]
-    evalue = args.get('evalue','1e-10')
+    temps = [float(item) for item in args.temp_range.split(',')]
+    df = select_based_on_class_id(cursor,args.class_id,class_column,args.data_type.lower(),temps)
+    build_fasta_from_dataframe(df,args.class_id,seqid_column,
+    os.path.join(args.outdir,'{0}_{1}_all.fasta'.format(args.class_id,args.data_type.lower())))
 
-    if ec is None: sys.exit('Error: Please specify ec number.')
+    if args.seq is None:
+        outtsv = os.path.join(args.outdir,'{0}_{1}_all.tsv'.format(args.class_id,args.data_type.lower()))
+        print('Saved results as a tsv file: ',outtsv)
+        df.to_csv(outtsv,sep='\t')
+        return
+    print('''
+        Step 2: Search for homologs.
+    ''')
+    # check input seq
+    seqfile = check_input_fasta(args.seq)
+    run_blastp(args.class_id,seqfile,args.threads,args.outdir,args.evalue)
 
-    if outdir is None: outdir = './'
-    if not os.path.exists(outdir): os.mkdir(outdir)
+    print('''
+        Step 3: Select enzymes based on homology.
+    ''')
+    df = select_based_on_blast(df,args.class_id,seqid_column,args.outdir)
+    outtsv = os.path.join(args.outdir,'{0}_{1}_homologs.tsv'.format(args.class_id,args.data_type.lower()))
+    print('Saved results as a tsv file: ',outtsv)
+    df.to_csv(outtsv,sep='\t')
 
-    annofile = os.path.join(ext_dir,'enzyme_ogt_topt.tsv')
-    brenda_seq_file = os.path.join(ext_dir,'brenda_sequences_20180109.fasta')
-
-    if not os.path.isfile(annofile): download_external_data(anno_link)
-    if not os.path.isfile(brenda_seq_file): download_external_data(fasta_link)
-
-    dfanno = pd.read_csv(annofile,index_col=0,sep='\t')
-    print_out('step 1: get all uniprot ids with the given ec number')
-    subdf = get_enzymes_of_ec(ec,dfanno,temps,data_type)
-    uniprot_ids = list(subdf.index)
-    print_out('')
-
-    print_out('step 2: get sequences and saving sequences to fasta format')
-    dfseqs = build_fasta_for_given_ec(ec,uniprot_ids,brenda_seq_file,outdir)
-
-    dfec_out = pd.merge(subdf,dfseqs,left_index=True,right_index=True,how='inner')
-
-    if seqfile is None:
-        subout = os.path.join(outdir,'{}_all.tsv'.format(ec))
-        print_out('Saving results to tab-seperated format')
-        dfec_out.to_csv(subout,sep='\t')
-        sys.exit('Done!')
-
-
-    print_out('step 3: run blastp')
-    run_blastp(ec,seqfile,cpu_num,outdir,evalue)
-
-    print_out('step 4: get info of hits')
-    seqInfo = get_info_for_selected_seqs(dfanno,uniprot_ids,ec)
-    blastRes = parse_blastp_results(outdir,ec)
-    print_out('{0} homologues were found by blast'.format(len(blastRes)))
-
-    print_out('step 5: save results')
-    build_output(blastRes,seqInfo,outdir,seqfile,dfanno)
-    print_out('Done!')
-
-    dbfile = os.path.join(outdir,'db')
-    os.system('rm {0}*'.format(dbfile))
+    build_fasta_from_dataframe(df,args.class_id,seqid_column,
+    os.path.join(args.outdir,'{0}_{1}_homologs.fasta'.format(args.class_id,args.data_type.lower())))
 
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser(prog='tome',description='''Tome (Temperature\
+    optima for microorganisms and enzymes) is an open source suite for two purposes:\
+    (1) predict the optimal growth temperature from proteome sequences (predOGT)
+    (2) get homologue enzymes for a given class id (EC number or CAZy family) \
+    with/without a sequence (getEnzymes) A detailed list of options can be obtained \
+    by calling 'tome predOGT --help'for predOGT or 'tome getEnzymes --help' for getEnzymes''')
 
-    if args.get('help',None) is not None and args.get('method',None) is None:
-        help_msg = '''
-        Tome (Temperature optima for microorganisms and enzymes) is an open
-        source suite for two purposes:
-        (1) predict the optimal growth temperature from proteome sequences
-        (2) get homologue enzymes for a given ec number with/without a sequence
+    subparsers = parser.add_subparsers(dest='command')
 
-        Tome Version 1.1 (built on Nov 23 2018)
 
-        Main tools:
-            predOGT     Predict optimal growth temperature(s) for one/many microorganisms
-            getEnzymes  Get homologue enzymes for a given ec number with/without a sequence
+    ############################## OGT arguments ###############################
+    parser_ogt = subparsers.add_parser('predOGT',help='Predict the optimal growth\
+    temperature from proteomes')
 
-        A detailed list of options can be obtained by calling 'tome predOGT --help'for
-        predOGT or 'tome getEnzymes --help' for getEnzymes
+    parser_ogt.add_argument('--fasta',help='a fasta file containing all protein \
+    sequence of a proteome.',metavar='',default=None)
 
-        Gang Li
-        2018-11-23
-        '''
-        sys.exit(help_msg)
+    parser_ogt.add_argument('--indir',help='a directory that contains a list of \
+    fasta files. Each fasta file is a proteome. Required for the prediction of OGT\
+    for a list of microorganisms. Important: Fasta file names much end with .fasta',
+    metavar='',default=None)
 
-    if args['method'] == 'predOGT':
-        # check arguments and run the method
-        all_args = ['fasta','indir','o','p','method','h','help','train']
-        for arg in args.keys():
-            if arg not in all_args:
-                sys.exit('Unknown argument: {0}'.format(arg))
+    parser_ogt.add_argument('--train',help='train the model again',
+    action='store_true')
 
-        if args.get('help',None) is not None or len(args)<1:
-            help_msg = '''
-        Usage:
-        tome predOGT [Options]
+    parser_ogt.add_argument('-o','--out',help='out file name',
+    type=argparse.FileType('w', encoding='UTF-8'),default=sys.stdout,metavar='')
 
-        Options:
-            --fasta input fasta file containing all protein sequence of a proteome.
-                    Required for the prediction of OGT for one microorganism
-            --indir directory that contains a list of fasta files. Each fasta file
-                    is a proteome. Required for the prediction of OGT for a list of
-                    microorganisms. Important: Fasta file names much endswith .fasta
-            --train train the model again.
-            -o      out file name, default: print on the terminal
-            -p      number of threads, default is 1. if set to 0, it will use all cpus
-                    available.
+    parser_ogt.add_argument('-p','--threads',default=1,help='number of threads \
+    used for feature extraction, default is 1. if set to 0, it will use all cpus available',
+    metavar='')
 
-            '''
-            sys.exit(help_msg)
-        elif args.get('train',None) is not None: train_model()
+
+    ############################## Topt arguments  #############################
+    parser_topt = subparsers.add_parser('getEnzymes',help='Get (homologue) enzymes \
+    for a given EC number of CAZy class with/without a sequence')
+
+    parser_topt.add_argument('--database',metavar='',choices=['brenda','cazy'],
+    help='the dataset should be used. Should be either brenda or cazy',
+    default = 'brenda')
+
+    parser_topt.add_argument('--class_id','--ec',help='EC number or CAZy family.\
+    1.1.1.1 for BRENDA, GH1 for CAZy, for instance.',metavar='')
+
+    parser_topt.add_argument('--temp_range',help='the temperature range that target\
+    enzymes should be in. For example: 50,100. 50 is lower bound and 100 is upper\
+    bound of the temperature.',metavar='')
+
+    parser_topt.add_argument('--data_type',choices=['ogt','topt','OGT','Topt'],
+    help = '[OGT or Topt], If OGT, Tome will find enzymes whose OGT of its source\
+    organims fall into the temperature range specified by --temp_range. If Topt, \
+    Tome will find enzymes whose Topt  fall into the temperature range specified\
+    by --temp_range. Default is Topt',metavar='',default = 'Topt')
+
+    parser_topt.add_argument('--seq',help='input fasta file which contains the \
+    sequence of the query enzyme. Optional',metavar='',default=None)
+
+    parser_topt.add_argument('--outdir',help='directory for ouput files. Default\
+    is current working folder.', metavar='',default='./')
+
+    parser_topt.add_argument('--evalue',help='evalue used in ncbi blastp. Default \
+    is 1e-10',metavar='',type=float,default=1e-10)
+
+    parser_topt.add_argument('-p','--threads',default=1,help='number of threads \
+    used for blast, default is 1. if set to 0, it will use all cpus available',
+    metavar='')
+
+    args = parser.parse_args()
+
+
+
+    params = {
+    'dbfiles':{'brenda':'external_data/brenda.sql','cazy':'external_data/cazy.sql'},
+    'dblinks':{'brenda':'http','cazy':'http'},
+    'class_column':{'brenda':'ec','cazy':'family'},
+    'seqid_column':{'brenda':'uniprot_id','cazy':'genbank'}
+    }
+
+    if args.command == 'predOGT':
+        if args.train: train_model()
         else: predOGT(args)
-
-    elif args['method'] == 'getEnzymes':
-        all_args = ['ec','seq','temp_range','outdir','p','method','h','help','evalue','data_type']
-        for arg in args.keys():
-            if arg not in all_args:
-                sys.exit('Unknown argument: {0}'.format(arg))
-
-        if args.get('-help',None) is not None:
-            help_msg = '''
-        Usage:
-        tome getEnzymes [Options]
-
-        Options:
-            --ec         EC number. Required. 1.1.1.1, for instance
-            --temp_range the temperature range that target enzymes should be in.
-                         For example: 50,100. 50 is lower bound and 100 is upper
-                         bound of the temperature.
-            --data_type  [OGT or Topt], If OGT, Tome will find enzymes whose OGT
-                         of its source organims fall into the temperature range
-                         specified by --temp_range. If Topt, Tome will find enzymes
-                         whose Topt  fall into the temperature range specified
-                         by --temp_range. Default is Topt
-            --seq        input fasta file which contains the sequence of the query
-                         enzyme. Optional
-            --outdir     directory for ouput files. Default is current working folder.
-            -p           number of threads, default is 1. if set to 0, it will use all cpus
-                         available.
-            --evalue     evalue used in ncbi blastp. Default is 1e-10
-
-            '''
-            sys.exit(help_msg)
-
-        else:getEnzymes(args)
-
-    else:
-        sys.exit('''Error:
-        Please check your inputs a gain. Tome currently only provides preOGT and
-        getEnzymes.
-        \n''')
+    elif args.command == 'getEnzymes': getEnzymes(args,**params)
+    else: parser.print_help()
 
 if __name__ == "__main__":
     main()
