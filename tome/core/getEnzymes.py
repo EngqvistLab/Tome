@@ -128,7 +128,7 @@ def check_input_fasta(seqfile):
     return new_seqfile
 
 
-def run_blastp(class_id,seqfile,cpu_num,outdir,evalue):
+def run_blastp(class_id,seqfile,cpu_num,outdir,evalue,data_type):
     '''
     class_id:     ec number for BRENDA and family id for CAZy
     seqfile:      a fasta file that contains the query seqeunce. Only one sequence
@@ -137,11 +137,12 @@ def run_blastp(class_id,seqfile,cpu_num,outdir,evalue):
     cpu_num:      number of threads
     outdir:       output directory
     evalue:       evalue cut-off used in blastp
+    data_type:    topt or ogt
 
     '''
-    dbseq = os.path.join(outdir,'{0}_all.fasta'.format(class_id))
+    dbseq = os.path.join(outdir,'{0}_{1}_all.fasta'.format(class_id,data_type))
     db = os.path.join(outdir,'db')
-    out = os.path.join(outdir,'blast_{}.tsv'.format(class_id))
+    out = os.path.join(outdir,'blast_{0}_{1}.tsv'.format(class_id,data_type))
 
     cmd = '''makeblastdb -dbtype prot -in {0} -out {1}
     blastp -query {2} -db {1} -outfmt 6 -num_threads {3} -out {4} -evalue {5} -max_hsps 1
@@ -152,7 +153,7 @@ def run_blastp(class_id,seqfile,cpu_num,outdir,evalue):
     os.system('rm {0}*'.format(db))
 
 
-def select_based_on_blast(df,class_id,seqid_column,outdir):
+def select_based_on_blast(df,class_id,seqid_column,outdir,data_type):
     '''
     df:            a data frame with selected enzymes based on class id and temperature range.
                    the index columns is id
@@ -162,13 +163,14 @@ def select_based_on_blast(df,class_id,seqid_column,outdir):
     outdir:        output directory
     return a dataframe with three more columns: identity,coverage,evalue
     '''
+    df['id'] = df.index
     df = df.set_index(seqid_column,drop=False)
 
     blastRes = list()
     index = list()
     # blastRes = [ident,coverage,seq]
     # index = [seq_ids]
-    blastfile = os.path.join(outdir,'blast_{}.tsv'.format(class_id))
+    blastfile = os.path.join(outdir,'blast_{0}_{1}.tsv'.format(class_id,data_type))
 
     for line in open(blastfile):
         cont = line.split()
@@ -225,12 +227,12 @@ def main(args,**params):
     ''')
     # check input seq
     seqfile = check_input_fasta(args.seq)
-    run_blastp(args.class_id,seqfile,args.threads,args.outdir,args.evalue)
+    run_blastp(args.class_id,seqfile,args.threads,args.outdir,args.evalue,args.data_type.lower())
 
     print('''
         Step 3: Select enzymes based on homology.
     ''')
-    df = select_based_on_blast(df,args.class_id,seqid_column,args.outdir)
+    df = select_based_on_blast(df,args.class_id,seqid_column,args.outdir,args.data_type.lower())
     outtsv = os.path.join(args.outdir,'{0}_{1}_homologs.tsv'.format(args.class_id,args.data_type.lower()))
     print('Saved results as a tsv file: ',outtsv)
     df.to_csv(outtsv,sep='\t')
