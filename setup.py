@@ -5,7 +5,7 @@
 from setuptools import setup, find_packages
 
 long_description = open('README.md').read()
-version = '1.0.0'
+version = '2.0.0'
 
 setup(
 	name='tome',    # This is the name of your PyPI-package.
@@ -22,8 +22,8 @@ setup(
     package_data={'tome':['data/train.csv',
 						  'model/OGT_svr.f',
 						  'model/OGT_svr.pkl',
-						  'external_data/enzyme_ogt_topt.tsv',
-						  'external_data/brenda_sequences_20180109.fasta']},
+						  'external_data/brenda.sql',
+						  'external_data/cazy.sql']},
 	license='GPLv3+',
 	classifiers=[
 	# How mature is this project? Common values are
