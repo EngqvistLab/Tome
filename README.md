@@ -2,8 +2,8 @@
 Tome (Temperature optima for microorganisms and enzymes) is an open source suite
 for two fundamental applications:
   * predict the optimal growth temperature from proteome sequences
-  * get homologue enzymes for a given ec number with/without a sequence that have
-  a temperature optima in a specified range.
+  * get enzymes that have a temperature optima in a specified range for a given EC number or CAZy family ID. If a protein sequence is provided, then it will select and report all homologous enzymes.       
+
 
 ## Citation
 If you have used `tome getEnzymes` in Tome v1.0 or `tome predOGT`, please cite  
