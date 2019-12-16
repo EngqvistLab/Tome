@@ -94,7 +94,8 @@ def main():
 
     params = {
     'dbfiles':{'brenda':'external_data/brenda.sql','cazy':'external_data/cazy.sql'},
-    'dblinks':{'brenda':'http','cazy':'http'},
+    'dblinks':{'brenda':'https://zenodo.org/record/3578468/files/brenda.sql',
+               'cazy':'https://zenodo.org/record/3578468/files/cazy.sql'},
     'class_column':{'brenda':'ec','cazy':'family'},
     'seqid_column':{'brenda':'uniprot_id','cazy':'genbank'}
     }
