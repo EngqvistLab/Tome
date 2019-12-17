@@ -37,15 +37,14 @@ def download_external_data(link):
     realpath = os.path.dirname(os.path.realpath(__file__))
     external_data_path = os.path.join(realpath,'external_data/')
     print('Downloading data from {0}'.format(link))
-    try:
-        subprocess.call(['wget',link,'-P', external_data_path])
-        #subprocess.call(['wget {0} -P {1}'.format(link,external_data_path)])
+    
+        
+    try: subprocess.call(['wget',link,'-P', external_data_path])
     except:
         file_name = link.split('/')[-1]
         file_name = os.path.join(external_data_path,file_name)
         subprocess.call(['curl',link,'-o',file_name])
-        #subprocess.call(['curl {0} -o {}'.format(link,file_name)])
-
+        
 def build_df_from_fetch(cursor):
     # cursor: which has executed a SELECT command
 
@@ -201,6 +200,9 @@ def check_database(args,params):
 def main(args,**params):
 
     check_database(args,params)
+    if args.database == 'brenda' and args.ec is None: sys.exit()
+    if args.database == 'cazy' and args.class_id is None: sys.exit()
+    
     class_column = params['class_column'][args.database]
     seqid_column = params['seqid_column'][args.database]
     path = os.path.dirname(os.path.realpath(__file__)).replace('core','')
