@@ -63,11 +63,11 @@ def main():
     default = 'brenda')
 
     parser_topt.add_argument('--class_id','--ec',help='EC number or CAZy family.\
-    1.1.1.1 for BRENDA, GH1 for CAZy, for instance.',metavar='')
+    1.1.1.1 for BRENDA, GH1 for CAZy, for instance.',metavar='',default=None)
 
     parser_topt.add_argument('--temp_range',help='the temperature range that target\
     enzymes should be in. For example: 50,100. 50 is lower bound and 100 is upper\
-    bound of the temperature.',metavar='')
+    bound of the temperature. Default 50,100',metavar='',default='50,100')
 
     parser_topt.add_argument('--data_type',choices=['ogt','topt','OGT','Topt'],
     help = '[OGT or Topt], If OGT, Tome will find enzymes whose OGT of its source\
