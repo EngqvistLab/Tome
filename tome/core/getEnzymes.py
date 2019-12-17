@@ -34,7 +34,7 @@ import sqlite3
 ################################################################################
 
 def download_external_data(link):
-    realpath = os.path.dirname(os.path.realpath(__file__))
+    realpath = os.path.dirname(os.path.realpath(__file__)).replace('/core','')
     external_data_path = os.path.join(realpath,'external_data/')
     print('Downloading data from {0}'.format(link))
     
@@ -200,8 +200,8 @@ def check_database(args,params):
 def main(args,**params):
 
     check_database(args,params)
-    if args.database == 'brenda' and args.ec is None: sys.exit()
-    if args.database == 'cazy' and args.class_id is None: sys.exit()
+    if args.class_id is None: sys.exit()
+    
     
     class_column = params['class_column'][args.database]
     seqid_column = params['seqid_column'][args.database]
