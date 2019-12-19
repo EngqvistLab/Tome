@@ -7,10 +7,10 @@ for two fundamental applications:
 
 ## Citation
 If you have used `tome getEnzymes` in Tome v1.0 or `tome predOGT`, please cite  
-*Li, G., Rabe, K. S., Nielsen, J., & Engqvist, M. K. M. (2019). Machine learning applied to predicting microorganism growth temperatures and enzyme catalytic optima. ACS Synthetic Biology, 8, 1411–1420.*
+*Li G., et al., (2019). Machine learning applied to predicting microorganism growth temperatures and enzyme catalytic optima. ACS Synthetic Biology, 8, 1411–1420.*
 
 If you have `tome getEnzymes` in Tome v2.0, please cite   
-*Ref to be updated*
+*Li G., et al., (2019). Performance of regression models as a function of experiment noise. arXiv:1912.08141 [q-bio.BM]*
 
 ## System
 * macOS
