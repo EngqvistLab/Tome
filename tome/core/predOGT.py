@@ -146,8 +146,8 @@ def do_count(seq):
 def count_dimer(fasta_file,p):
     seqs = [str(rec.seq).upper() for rec in SeqIO.parse(fasta_file,'fasta')]
 
-    if p == 0:num_cpus = cpu_count()
-    else: num_cpus = p
+    if int(p) == 0:num_cpus = cpu_count()
+    else: num_cpus = int(p)
     results = Pool(num_cpus).map(do_count, seqs)
     dimers = sum(results, Counter())
     return dict(dimers)
